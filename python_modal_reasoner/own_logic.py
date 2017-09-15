@@ -48,4 +48,3 @@ if DEBUG:
     print("The modal possible valuations of the atoms are: ", possible)
     print("The modal necessary valuations of the atoms are: ", necessary)
     print("The possible worlds are: \n", possible_worlds)
-

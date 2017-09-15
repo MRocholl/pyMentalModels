@@ -116,8 +116,10 @@ def main():
     all_possible_worlds = []
     all_atoms = []
     for i, premise in enumerate(args.premises):
-        # TODO preprocess strings to substitute "<>" biconditional through "&" if intutitive \
+
+        # XXX preprocess strings to substitute "<>" biconditional through "&" if intutitive \
         # or "Equals()" if --explicit
+
         formated_premise = sympify_formatter(parse_expr(premise), op_names)
         expr = sympify(formated_premise, locals={})
         atoms = expr.atoms()

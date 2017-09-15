@@ -27,10 +27,18 @@ def populate_np_array(sympified_expr):
 
         initialize numpy array of right dimensionality D = |Atoms|
 
+    Idea: Traverse sympy expression recursively and broadcast model according to the logical rule
 
     Parameters
     ----------
     sympified_expr : Logical Instance of the usual logical operators
+
+
+    Example
+    -------
+
+    >>> populate_np_array()
+
 
     Returns
     -------
@@ -47,6 +55,7 @@ def populate_np_array(sympified_expr):
 
         # The following will only work for symmetric relations
         for first_at, second_at in combs:
+
             """Do bit by bit combinations of the logical xor operation"""
             possible_worlds[first_at, second_at] = np.bitwise_xor(possible_worlds[first_at, first_at],
                                                                   possible_worlds[second_at, second_at])
@@ -71,9 +80,19 @@ def populate_np_array(sympified_expr):
     return modal_possible, modal_necessary, possible_worlds
 
 
+def OR():
+    """TODO: Docstring for OR.
+    Returns
+    -------
+    TODO
 
-print(populate_np_array(sympify("Or(A, B, C)")))
+    """
+    pass
 
+
+_, _, possible_world = populate_np_array(sympify("Or(A, B, C)"))
+
+print(possible_world)
 
 
 
