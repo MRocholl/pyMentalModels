@@ -3,8 +3,8 @@
 
 
 def parse_expr(expression):
-    """ Parses expression and returns a list
-    -------
+    """
+    Parses expression and returns a list
 
     """
     import pyparsing as pp
@@ -47,4 +47,5 @@ def sympify_formatter(args, rules):
                                              f_args=", ".join(arguments))
 
 
+print(parse_expr("A|B"))
 print(sympify_formatter(parse_expr("A | B")))

@@ -27,7 +27,8 @@ def populate_np_array(sympified_expr):
 
         initialize numpy array of right dimensionality D = |Atoms|
 
-    Idea: Traverse sympy expression recursively and broadcast model according to the logical rule
+    Idea: Traverse sympy expression recursively and broadcast model
+          according to the logical rule
 
     Parameters
     ----------
@@ -45,34 +46,36 @@ def populate_np_array(sympified_expr):
     possible_worlds: n-dimensional array
 
     """
+
     sorted_atoms = list(sympified_expr.atoms())
     nr_atoms = len(sorted_atoms)
-    print(type(sympified_expr))
-    if isinstance(sympified_expr, Xor):
-        possible_worlds = np.identity(nr_atoms, dtype=np.int8)
-        print(sorted_atoms)
-        combs = list(combinations(range(nr_atoms), 2))
 
-        # The following will only work for symmetric relations
-        for first_at, second_at in combs:
+    if all(isinstance(arg, (Xor, And, Or) for arg in sympified_expr.args):
+        if isinstance(sympified_expr, Xor):
+            possible_worlds = np.identity(nr_atoms, dtype=np.int8)
+            print(sorted_atoms)
+            combs = list(combinations(range(nr_atoms), 2))
 
-            """Do bit by bit combinations of the logical xor operation"""
-            possible_worlds[first_at, second_at] = np.bitwise_xor(possible_worlds[first_at, first_at],
-                                                                  possible_worlds[second_at, second_at])
-    if isinstance(sympified_expr, And):
-        possible_worlds = np.array([1 for _ in range(nr_atoms)])
+            # The following will only work for symmetric relations
+            for first_at, second_at in combs:
 
-    if isinstance(sympified_expr, Or):
-        possible_worlds = np.identity(nr_atoms, dtype=np.int8)
-        combs = list(combinations(range(nr_atoms), 2))
+                """Do bit by bit combinations of the logical xor operation"""
+                possible_worlds[first_at, second_at] = np.bitwise_xor(possible_worlds[first_at, first_at],
+                                                                      possible_worlds[second_at, second_at])
+        if isinstance(sympified_expr, And):
+            possible_worlds = np.array([1 for _ in range(nr_atoms)])
 
-        # The following will only work for symmetric relations
-        for first_at, second_at in combs:
-            """Do bit by bit combinations of the logical or operation"""
-            possible_worlds[first_at, second_at] = np.bitwise_or(possible_worlds[first_at, first_at],
-                                                                 possible_worlds[second_at, second_at])
-    if isinstance(sympified_expr, Implies):
-        raise NotImplementedError("Did not implement `Implies` yet")
+        if isinstance(sympified_expr, Or):
+            possible_worlds = np.identity(nr_atoms, dtype=np.int8)
+            combs = list(combinations(range(nr_atoms), 2))
+
+            # The following will only work for symmetric relations
+            for first_at, second_at in combs:
+                """Do bit by bit combinations of the logical or operation"""
+                possible_worlds[first_at, second_at] = np.bitwise_or(possible_worlds[first_at, first_at],
+                                                                     possible_worlds[second_at, second_at])
+        if isinstance(sympified_expr, Implies):
+            raise NotImplementedError("Did not implement `Implies` yet")
 
 
     modal_possible = dict(zip(sorted_atoms, np.any(possible_worlds, axis=1)))
