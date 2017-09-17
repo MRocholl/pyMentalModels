@@ -47,5 +47,3 @@ def sympify_formatter(args, rules):
                                              f_args=", ".join(arguments))
 
 
-print(parse_expr("A|B"))
-print(sympify_formatter(parse_expr("A | B")))

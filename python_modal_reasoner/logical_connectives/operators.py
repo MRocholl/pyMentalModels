@@ -10,7 +10,7 @@ op_names = {'[]': "Necessary",
             '|': "Or",
             '&': "And",
             '->': "Implies",
-            '<->': "Equals",
+            '<->': "Equivalent",
             '^': "Xor",
             }
 
