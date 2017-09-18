@@ -31,8 +31,10 @@ def parse_expr(expression):
 
 
 def sympify_formatter(args, rules):
-    """ Formatting function to make the parsed list sympify-readable
-        For sympify refer to:  http://docs.sympy.org/latest/modules/core.html
+    """
+    Formatting function to make the parsed list sympify-readable
+    For sympify refer to:  http://docs.sympy.org/latest/modules/core.html
+
     """
     if len(args) == 1 or isinstance(args, str):
         return "{}".format(args)
@@ -45,5 +47,3 @@ def sympify_formatter(args, rules):
         # Sympify takes general form of Operator(#args > 2)
         return "{operator}({f_args})".format(operator=op,
                                              f_args=", ".join(arguments))
-
-
