@@ -14,7 +14,6 @@
 #  Imports {{{ #
 from sympy.logic.boolalg import Xor
 
-from __future__ import print_function, division
 
 from collections import defaultdict
 from itertools import combinations, product
@@ -34,8 +33,7 @@ from sympy import Eq
 #  }}} Imports #
 
 
-class MyXor(BooleanFunction):
-
+class Xor(BooleanFunction):
     """
         Intuitive Xor that behaves slightly differently to the normal xor
         Normal Xor is a binary operator.
@@ -66,10 +64,11 @@ class MyXor(BooleanFunction):
 
     def __new__(cls, *args, **kwargs):
         argset = set([])
-        obj = super(MyXor, cls).__new__(cls, *args, **kwargs)
-        from collections import Counter
-        if Counter(obj._args)[True] > 1:
+        obj = super(Xor, cls).__new__(cls, *args, **kwargs)
+        counts = Counter(obj._args)
+        if counts[True] > 1:
             return false
+        blackset = {el for el in counts if counts[el] > 1}
         for arg in obj._args:
             if isinstance(arg, Number) or arg in (True, False):
                 if arg:
@@ -77,31 +76,17 @@ class MyXor(BooleanFunction):
                 else:
                     continue
             if isinstance(arg, Xor):
-                for a in arg.args:
-                    argset.remove(a) if a in argset else argset.add(a)
+                if any(a in argset for a in arg.args):
+                    # Ex: Xor(x, y, Xor(x, z))
+                    argset.add(arg)
+                else:
+                    for a in arg.args:
+                        argset.add(a)
             elif arg in argset:
                 argset.remove(arg)
             else:
                 argset.add(arg)
-        rel = [(r, r.canonical, (~r).canonical) for r in argset if r.is_Relational]
-        odd = False  # is number of complimentary pairs odd? start 0 -> False
-        remove = []
-        for i, (r, c, nc) in enumerate(rel):
-            for j in range(i + 1, len(rel)):
-                rj, cj = rel[j][:2]
-                if cj == nc:
-                    odd = ~odd
-                    break
-                elif cj == c:
-                    break
-            else:
-                continue
-            remove.append((r, rj))
-        if odd:
-            argset.remove(true) if true in argset else argset.add(true)
-        for a, b in remove:
-            argset.remove(a)
-            argset.remove(b)
+        argset = argset.difference(blackset)
         if len(argset) == 0:
             return false
         elif len(argset) == 1:
@@ -120,7 +105,7 @@ class MyXor(BooleanFunction):
         return tuple(ordered(self._argset))
 
 
-class Necessary:
+class Necessary(BooleanFunction):
     # XXX Need to futher narrow down the mechanism
     """ Modal logical Operator
         Value of subformula `must` evaluate to `True`:
@@ -143,14 +128,15 @@ class Necessary:
         True
 
         Necessary uses xreplace or subs to give symbolic variables values
-        >>> MyXor(Or(x, y)).xreplace({x:True, y:False})
+        >>> Necessary(Or(x, y)).xreplace({x:True, y:False})
         True
     """
     def __new__(cls, *args, **kwargs):
-        pass
+        obj = super(Necessary, cls).__new__(cls, *args, **kwargs)
+        return obj._args
 
 
-class Possibly:
+class Possibly(BooleanFunction):
     """ Modal logical Operator
         Arguments `can` evaluate to true.
         This class returns the arguments as are.
@@ -159,11 +145,12 @@ class Possibly:
         ========
         >>> from
 
-
-
     """
-        def __new__():
-            argset = set([])
-            obj = super(Possibly, cls).__new__(cls, *args, **kwargs)
-            return obj._args
+    def __new__(cls, *args, **kwargs):
+        obj = super(Possibly, cls).__new__(cls, *args, **kwargs)
+        return obj._args
 
+
+
+a = sympify("B & Possibly(A & C)", locals={"Possibly": Possibly} )
+print(a)

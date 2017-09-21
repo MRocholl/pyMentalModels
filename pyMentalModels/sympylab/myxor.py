@@ -5,18 +5,13 @@ from __future__ import print_function, division
 
 from collections import defaultdict, Counter
 from itertools import combinations, product
-
 from sympy.core.basic import Basic
 from sympy.core.cache import cacheit
 from sympy.core.numbers import Number
-from sympy.core.operations import LatticeOp
-from sympy.core.function import Application, Derivative
-from sympy.core.compatibility import ordered, range, with_metaclass, as_int
-from sympy.core.sympify import converter, _sympify, sympify
+from sympy.core.sympify import sympify
 from sympy.core.singleton import Singleton, S
 
 from sympy.logic.boolalg import *
-from sympy import Eq
 
 
 
@@ -64,9 +59,11 @@ class Xor(BooleanFunction):
         argset = set([])
         obj = super(Xor, cls).__new__(cls, *args, **kwargs)
         print("0: obj arguments: ", obj._args)
-        if Counter(obj._args)[True] > 1:
-            print("here")
+        counts = Counter(obj._args)
+        if counts[True] > 1:
             return false
+        blackset = {el for el in counts if counts[el] > 1}
+        print(blackset)
         for arg in obj._args:
             if isinstance(arg, Number) or arg in (True, False):
                 if arg:
@@ -74,34 +71,32 @@ class Xor(BooleanFunction):
                 else:
                     continue
             if isinstance(arg, Xor):
-                print("1: arguments of argument Xor: ", arg.args)
-                # Need to change this
-                for a in arg.args:
-                    print("2: The argset is: ",argset)
-                    argset.remove(a) if a in argset else argset.add(a)
+                if any(a in argset for a in arg.args):
+                    # Ex: Xor(x, y, Xor(x, z))
+                    argset.add(arg)
+                else:
+                    for a in arg.args:
+                        argset.add(a)
             elif arg in argset:
-                print("arg", arg)
+                print("removing!")
                 argset.remove(arg)
-                print(argset)
             else:
+                print("adding!")
                 argset.add(arg)
+        argset = argset.difference(blackset)
         if len(argset) == 0:
-            print("3: Length argset is 0")
             return false
         elif len(argset) == 1:
-            print("argset length 1")
             return argset.pop()
         elif True in argset:
             argset.remove(True)
-            print("True in argset")
             return Not(Xor(*argset))
         else:
-            print("4: finally")
             obj._args = tuple(ordered(argset))
             obj._argset = frozenset(argset)
             print("Object._argset: ", obj._argset)
             print("Type of object is: ", type(obj))
-            print(obj)
+            print("the oject is:", obj)
             return obj
 
     @property
@@ -120,7 +115,7 @@ print(Xor(A))
 assert Xor(A, A) is false
 assert Xor(True, A, A) is true
 """
-b = Xor(A, A, A, A, A, B)
+b = Xor(A, A)
 print(b)
 print()
 print(b.xreplace({A: True, B: True}))
