@@ -33,7 +33,7 @@ from sympy import Eq
 #  }}} Imports #
 
 
-class Xor(BooleanFunction):
+class MulXor(BooleanFunction):
     """
         Intuitive Xor that behaves slightly differently to the normal xor
         Normal Xor is a binary operator.
@@ -42,22 +42,22 @@ class Xor(BooleanFunction):
 
         Examples
         ========
-        >>> from alternative_operators import MyXor
+        >>> from alternative_operators import MulXor
         >>> from sympy import symbols
         >>> x, y, z = symbols('x y z')
-        >>> MyXor(True, False)
+        >>> MulXor(True, False)
         True
-        >>> MyXor(True, True)
+        >>> MulXor(True, True)
         False
 
         Multiple arguments are not evaluated in a dyadic manner but as one
-        >>> MyXor(True, True, False)
+        >>> MulXor(True, True, False)
         False
-        >>> MyXor(True, False, False, False)
+        >>> MulXor(True, False, False, False)
         True
 
-        MyXor uses xreplace or subs to give symbolic variables values
-        >>> MyXor(Or(x, y), And(x,y)).xreplace({x:True, y:False})
+        MulXor uses xreplace or subs to give symbolic variables values
+        >>> MulXor(Or(x, y), And(x,y)).xreplace({x:True, y:False})
         True
 
     """
