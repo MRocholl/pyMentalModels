@@ -2,14 +2,14 @@
 # -*- coding: iso-8859-15 -*-
 
 from itertools import permutations, combinations
+from sympy.logic.boolalg import truth_table
 
-
-def satisfiying_variable_assignments(truth_table):
+def satisfiying_variable_assignments(t_table):
     """yields the truth_table entries with valuation True (Principle of Truth)"""
     from collections import namedtuple
     TruthTableEntry = namedtuple("TruthTableEntry", ["assignment", "valuation"])
     yield from (variable_assignment for variable_assignment, _ in filter(
-                lambda result: TruthTableEntry(*result).valuation, truth_table))
+                lambda result: TruthTableEntry(*result).valuation, t_table))
 
 
 def pretty_print_atom_assign(atoms, atom_assignment, explicit):
@@ -26,8 +26,10 @@ def pretty_print_atom_assign(atoms, atom_assignment, explicit):
     return " ".join(str(atom) if value else "!{}".format(atom) for atom, value in zip(atoms, atom_assignment))
 
 
-def possible_worlds(atoms, truth_table, explicit=True):
-    return [pretty_print_atom_assign(atoms, variable_assignment, explicit) for variable_assignment in satisfiying_variable_assignments(truth_table)]
+def generate_possible_models(expression, explicit=True):
+    atoms = sorted(expression.atoms(), key=str)
+    t_table = truth_table(expression, atoms)
+    return [pretty_print_atom_assign(atoms, variable_assignment, explicit) for variable_assignment in satisfiying_variable_assignments(t_table)]
 
 
 def zip_2_lists(list1, list2):
