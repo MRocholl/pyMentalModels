@@ -44,7 +44,7 @@ def populate_np_array(sympified_expr):
 
     Returns
     -------
-    possible_worlds: n-dimensional array
+    possible_models: n-dimensional array
 
     """
 
@@ -53,20 +53,20 @@ def populate_np_array(sympified_expr):
 
     if isinstance(sympified_expr, Xor):
         if all(isinstance(arg, Symbol) for arg in sympified_expr.args):
-            possible_worlds = np.identity(nr_atoms, dtype=np.int8)
+            possible_models = np.identity(nr_atoms, dtype=np.int8)
 
     if isinstance(sympified_expr, And):
         if all(isinstance(arg, Symbol) for arg in sympified_expr.args):
-            possible_worlds = np.array([1 for _ in range(nr_atoms)])
+            possible_models = np.array([1 for _ in range(nr_atoms)])
 
     if isinstance(sympified_expr, Or):
         if all(isinstance(arg, Symbol) for arg in sympified_expr.args):
-            possible_worlds = np.identity(nr_atoms, dtype=np.int8)
+            possible_models = np.identity(nr_atoms, dtype=np.int8)
 
     if isinstance(sympified_expr, Implies):
         if all(isinstance(arg, Symbol) for arg in sympified_expr.args):
             raise NotImplementedError("Did not implement `Implies` yet")
 
-    modal_possible = dict(zip(sorted_atoms, np.any(possible_worlds, axis=1)))
-    modal_necessary = dict(zip(sorted_atoms, np.all(possible_worlds, axis=1)))
-    return modal_possible, modal_necessary, possible_worlds
+    modal_possible = dict(zip(sorted_atoms, np.any(possible_models, axis=1)))
+    modal_necessary = dict(zip(sorted_atoms, np.all(possible_models, axis=1)))
+    return modal_possible, modal_necessary, possible_models

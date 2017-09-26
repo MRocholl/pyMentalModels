@@ -103,10 +103,10 @@ class TestFormatter(unittest.TestCase):
 
 
 from sympy.logic.boolalg import And, Or, Xor, Implies, sympify
-from pyMentalModels.parsing.modal_parser import parse_expr, sympify_formatter
-from pyMentalModels.reasoner.reasoner import populate_np_array
-from pyMentalModels.data.expressions import expressions, parsed_expressions
-from pyMentalModels.logical_connectives.operators import op_names
+# from pyMentalModels.parsing.modal_parser import parse_expr, sympify_formatter
+# from pyMentalModels.reasoner.reasoner import populate_np_array
+# from pyMentalModels.data.expressions import expressions, parsed_expressions
+# from pyMentalModels.logical_connectives.operators import op_names
 
 DEBUG = True
 
@@ -140,13 +140,13 @@ if DEBUG:
             print(term, value)
     """
 
-possible, necessary, possible_worlds = populate_np_array(sympified_expr_triv)
+possible, necessary, possible_models = populate_np_array(sympified_expr_triv)
 
 if DEBUG:
     print()
     print("The modal possible valuations of the atoms are: ", possible)
     print("The modal necessary valuations of the atoms are: ", necessary)
-    print("The possible worlds are: \n", possible_worlds)
+    print("The possible worlds are: \n", possible_models)
 
 
 

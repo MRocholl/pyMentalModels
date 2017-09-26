@@ -18,6 +18,7 @@ def pretty_print_atom_assign(atoms, atom_assignment, explicit):
         Atom. Assignment 0 --> "!atom"
         Atom. Assignment 1 --> "atom"
     """
+
     if not explicit:
         if any(value for atom, value in zip(atoms, atom_assignment)):
             return " ".join(str(atom) for atom, value in zip(atoms, atom_assignment) if value)
@@ -27,9 +28,14 @@ def pretty_print_atom_assign(atoms, atom_assignment, explicit):
 
 
 def generate_possible_models(expression, explicit=True):
+
+    def _increasing_ones_first_sort(array_slice):
+                pos_of_ones = [-array_slice[i] for i, _ in enumerate(array_slice)]
+                return array_slice.count(1), pos_of_ones
+
     atoms = sorted(expression.atoms(), key=str)
     t_table = truth_table(expression, atoms)
-    return [pretty_print_atom_assign(atoms, variable_assignment, explicit) for variable_assignment in satisfiying_variable_assignments(t_table)]
+    return [pretty_print_atom_assign(atoms, variable_assignment, explicit) for variable_assignment in sorted(satisfiying_variable_assignments(t_table), key=_increasing_ones_first_sort)]
 
 
 def zip_2_lists(list1, list2):

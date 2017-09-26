@@ -2,7 +2,7 @@ import sympy
 import unittest
 
 # Package related imports
-from pyMentalModels.reasoner.sympy_reasoner import possible_worlds
+from pyMentalModels.reasoner.sympy_reasoner import generate_possible_models
 
 # Sympy imports
 # from sympy.logic.boolalg import Not, Or, And, Xor, Implies, BooleanFunction, truth_table
@@ -28,9 +28,9 @@ class TestSimple(unittest.TestCase):
             expr = sympify(inp, locals={})
             print(expr)
             atoms = expr.atoms()
-            premise_possible_worlds = possible_worlds(atoms, truth_table(expr, atoms), explicit=False)
-            print("Extracted possible world for premise {}:\t ".format(inp), premise_possible_worlds, "\n")
-            self.assertEqual(make_set_wise(premise_possible_worlds), make_set_wise(soll))
+            premise_possible_models = generate_possible_models(atoms, truth_table(expr, atoms), explicit=False)
+            print("Extracted possible world for premise {}:\t ".format(inp), premise_possible_models, "\n")
+            self.assertEqual(make_set_wise(premise_possible_models), make_set_wise(soll))
 
 
 if __name__ == "__main__":
