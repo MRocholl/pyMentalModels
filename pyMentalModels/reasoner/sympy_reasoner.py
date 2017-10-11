@@ -4,6 +4,7 @@
 from itertools import permutations, combinations
 from sympy.logic.boolalg import truth_table
 
+
 def satisfiying_variable_assignments(t_table):
     """yields the truth_table entries with valuation True (Principle of Truth)"""
     from collections import namedtuple
@@ -12,30 +13,44 @@ def satisfiying_variable_assignments(t_table):
                 lambda result: TruthTableEntry(*result).valuation, t_table))
 
 
-def pretty_print_atom_assign(atoms, atom_assignment, explicit):
+def pretty_print_atom_assign(atoms, atom_assignment, intuitive):
     """
         Returns a string representation of the atoms
         Atom. Assignment 0 --> "!atom"
         Atom. Assignment 1 --> "atom"
     """
-
-    if not explicit:
+    if intuitive:
         if any(value for atom, value in zip(atoms, atom_assignment)):
-            return " ".join(str(atom) for atom, value in zip(atoms, atom_assignment) if value)
+                return [str(atom) if value else " " for atom, value in zip(atoms, atom_assignment)]
         else:
-            return " ".join(str(atom) for i, (atom, value) in enumerate(zip(atoms, atom_assignment)) if i == 0)
-    return " ".join(str(atom) if value else "!{}".format(atom) for atom, value in zip(atoms, atom_assignment))
+                return [str(atom) for i, (atom, value) in enumerate(zip(atoms, atom_assignment)) if i == 0]
+    return [str(atom) if value else "!{}".format(atom) for atom, value in zip(atoms, atom_assignment)]
 
 
-def generate_possible_models(expression, explicit=True):
+def generate_possible_models(sympified_expression, intuitive=True):
+    """
+        generates all the possible models satisfying `principle of truth`
 
+        Parameters
+        ----------
+        sympified_expression : BooleanFunction of Sympy logical object
+            i.e. sympify("Or(A,B)")
+
+        intuitive : Boolean
+           tells the function how to flesh out the models.
+
+        Returns
+        -------
+        List of strings that each represent a possible world
+
+    """
     def _increasing_ones_first_sort(array_slice):
                 pos_of_ones = [-array_slice[i] for i, _ in enumerate(array_slice)]
                 return array_slice.count(1), pos_of_ones
 
-    atoms = sorted(expression.atoms(), key=str)
-    t_table = truth_table(expression, atoms)
-    return [pretty_print_atom_assign(atoms, variable_assignment, explicit) for variable_assignment in sorted(satisfiying_variable_assignments(t_table), key=_increasing_ones_first_sort)]
+    atoms = sorted(sympified_expression.atoms(), key=str)
+    t_table = truth_table(sympified_expression, atoms)
+    return [pretty_print_atom_assign(atoms, variable_assignment, intuitive) for variable_assignment in sorted(satisfiying_variable_assignments(t_table), key=_increasing_ones_first_sort)]
 
 
 def zip_2_lists(list1, list2):
