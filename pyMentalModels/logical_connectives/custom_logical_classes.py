@@ -5,7 +5,19 @@
     Implementation of Custom logical connectives:
     (1) Xor: Takes multiple arguments instead of 2
     (2) Necessary
+    The problem is that the truth value of A does not determine the truth value for []A. For example, when A is ‘Dogs are dogs’, []A is true, but when A is ‘Dogs are pets’, []A is false
+
     (3) Possible
+
+    Rules for the modal logical system:
+    ==================================
+
+    (~) v(~A, w)=T iff v(A, w)=F.
+
+    (->) v(A -> B, w)=T iff v(A, w)=F or v(B, w)=T. !!!!! Implication is AND in implicit mode
+
+    (5) v([]A, w)=T iff for every world w′ in W, v(A, w′)=T.
+
 
 
     """
@@ -31,6 +43,69 @@ from sympy.logic.boolalg import *
 from sympy import Eq
 
 #  }}} Imports #
+
+
+class ModalAnd(LatticeOp, BooleanFunction):
+    # XXX TODO  Change docstring to reflect modal logical behavior. Also got rid of all the relational stuff
+    """
+    Logical AND function.
+
+    It evaluates its arguments in order, giving False immediately
+    if any of them are False, and True if they are all True.
+
+    Examples
+    ========
+
+    >>> from sympy.logic.boolalg import sympify
+    >>> from pyMentalModels.logical_connectives import ModalAnd
+    >>> sympfify("x & y", {"ModalAnd": ModalAnd})
+    ModalAnd(x, y)
+
+    >>> ModalAnd(x, y).subs(x, 1)
+    y
+
+    """
+    zero = false
+    identity = true
+
+    nargs = None
+
+    @classmethod
+    def _new_args_filter(cls, args):
+        newargs = []
+        rel = []
+        for x in reversed(list(args)):
+            if isinstance(x, Number) or x in (0, 1):
+                newargs.append(True if x else False)
+                continue
+            if isinstance(x, Possibly):
+                for el in x._args:
+                    newargs.append(el)
+                    continue
+            else:
+                newargs.append(x)
+        return LatticeOp._new_args_filter(newargs, And)
+
+    #def as_set(self):
+    #    """
+    #    Rewrite logic operators and relationals in terms of real sets.
+
+    #    Examples
+    #    ========
+
+    #    >>> from sympy import And, Symbol
+    #    >>> x = Symbol('x', real=True)
+    #    >>> And(x<2, x>-2).as_set()
+    #    Interval.open(-2, 2)
+    #    """
+    #    from sympy.sets.sets import Intersection
+    #    if len(self.free_symbols) == 1:
+    #        return Intersection(*[arg.as_set() for arg in self.args])
+    #    else:
+    #        raise NotImplementedError("Sorry, And.as_set has not yet been"
+    #                                  " implemented for multivariate"
+    #                                  " expressions")
+
 
 
 class MulXor(BooleanFunction):
@@ -113,7 +188,7 @@ class Necessary(BooleanFunction):
 
         Examples
         ========
-        >>> from python_modal_logical.logical_connectives.custom_logical_classes import Necessary
+        >>> from pyMentalModels.logical_connectives.custom_logical_classes import Necessary
         >>> from sympy import symbols
         >>> x, y, z = symbols('x y z')
         >>> Necessary()
@@ -133,7 +208,9 @@ class Necessary(BooleanFunction):
     """
     def __new__(cls, *args, **kwargs):
         obj = super(Necessary, cls).__new__(cls, *args, **kwargs)
-        return obj._args
+        necessaries.append(obj._args[0])
+        arg = obj._args[0]
+        return obj._args[0]
 
 
 class Possibly(BooleanFunction):
@@ -143,14 +220,27 @@ class Possibly(BooleanFunction):
 
         Examples
         ========
-        >>> from
+        >>> from pyMentalModels.logical_connectives.custom_logical_classes import Possibly
 
     """
     def __new__(cls, *args, **kwargs):
         obj = super(Possibly, cls).__new__(cls, *args, **kwargs)
-        return obj._args
+        return obj
 
+"""
+Furthermore, [](A&B) entails []A&[]B and vice versa; while []A|[]B entails [](A|B), but not vice versa. This reflects the patterns exhibited by the universal quantifier: ∀x(A&B) entails ∀xA&∀xB and vice versa, while ∀xA ∨ ∀xB entails ∀x(A ∨ B) but not vice versa
+"""
 
-
-a = sympify("B & Possibly(A & C)", locals={"Possibly": Possibly} )
+from sympy import symbols
+A, B, C = symbols("A B C")
+a = ModalAnd(A, Possibly(B | C))
+necessaries = []
+# locals={
+#     "Possibly": Possibly,
+#     "ModalAnd": Modal
+# }
+b = ModalAnd(A, Necessary(ModalAnd(B, C)))
+print(necessaries)
+print(b)
 print(a)
+print(a.xreplace({A:True, B:True, C:False}))
