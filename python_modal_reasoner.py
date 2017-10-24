@@ -1,5 +1,5 @@
 #! /usr/bin/python3
-# -*- coding: iso-8859-15 -*-
+# -*- coding: utf-8 -*-
 
 import numpy as np
 import sympy
@@ -9,20 +9,20 @@ from sympy.core.sympify import sympify
 
 
 from pyMentalModels.parsing.modal_parser import parse_expr, sympify_formatter
-from pyMentalModels.logical_connectives.operators import op_names, intuit_op
-from pyMentalModels.logical_connectives.custom_logical_classes import MyXor
-from pyMentalModels.reasoner.sympy_reasoner import reasoner, satisfiying_variable_assignments, possible_worlds
+from pyMentalModels.logical_connectives.operators import explicit_op, intuit_op
+from pyMentalModels.logical_connectives.custom_logical_classes import MulXor
+from pyMentalModels.reasoner.sympy_reasoner import reasoner, satisfiying_variable_assignments, generate_possible_models
 
 
-premises = ["A -> (B | C)"]
+premises = ["~A | B"]
 explicit = False
 
 if not explicit:
         sympy.boolalg.Implies = sympy.boolalg.And
         operators = intuit_op
 else:
-    operators = op_names
-all_possible_worlds = []
+    operators = explicit_op
+all_possible_models = []
 all_atoms = []
 for i, premise in enumerate(premises):
     # XXX preprocess strings to substitute "<>" biconditional through "&" if intutitive \
@@ -35,14 +35,15 @@ for i, premise in enumerate(premises):
     print("Epression being evaluated is:\t\t", expr)
     print(atoms)
     print(np.asarray(list(satisfiying_variable_assignments(truth_table(expr, atoms)))))
-    premise_possible_worlds = possible_worlds(atoms, truth_table(expr, atoms), explicit)
-    print(premise_possible_worlds)
-    # print("Extracted possible world for premise {}:\t ".format(i), premise_possible_worlds, "\n")
-    # all_possible_worlds.append(premise_possible_worlds)
-print("Resulting possible worlds for all premises: ", all_possible_worlds)
+
+    premise_possible_models = generate_possible_models(expr, explicit)
+    print(premise_possible_models)
+    # print("Extracted possible world for premise {}:\t ".format(i), premise_possible_models, "\n")
+    # all_possible_models.append(premise_possible_models)
+print("Resulting possible worlds for all premises: ", all_possible_models)
 
 # activate reasoner based on the possible worlds generated based on the premises
-conclusion = reasoner(all_atoms, all_possible_worlds)
+conclusion = reasoner(all_atoms, all_possible_models)
 if conclusion:
     print("It follows that: ", conclusion)
 else:

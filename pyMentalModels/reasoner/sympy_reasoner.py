@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# -*- coding: iso-8859-15 -*-
+# -*- coding: utf-8 -*-
 
 from itertools import permutations, combinations
 from sympy.logic.boolalg import truth_table
@@ -14,6 +14,7 @@ def satisfiying_variable_assignments(t_table):
 
 
 def pretty_print_atom_assign(atoms, atom_assignment, intuitive):
+    # TODO These guys need to take into account the possibility of explicitly representing negatives if explicitly given
     """
         Returns a string representation of the atoms
         Atom. Assignment 0 --> "!atom"
@@ -23,11 +24,13 @@ def pretty_print_atom_assign(atoms, atom_assignment, intuitive):
         if any(value for atom, value in zip(atoms, atom_assignment)):
                 return [str(atom) if value else " " for atom, value in zip(atoms, atom_assignment)]
         else:
-                return [str(atom) for i, (atom, value) in enumerate(zip(atoms, atom_assignment)) if i == 0]
-    return [str(atom) if value else "!{}".format(atom) for atom, value in zip(atoms, atom_assignment)]
+                return ["¬{}".format(atom) for i, (atom, value) in enumerate(zip(atoms, atom_assignment)) if i == 0]
+    return [str(atom) if value else "¬{}".format(atom) for atom, value in zip(atoms, atom_assignment)]
 
 
 def generate_possible_models(sympified_expression, intuitive=True):
+    # TODO For arguments that are in NOT() find a way to reverse 0 to 1 in truth_table
+    # Possibly by post_processing the arguments that are in a Not to look accordingly
     """
         generates all the possible models satisfying `principle of truth`
 

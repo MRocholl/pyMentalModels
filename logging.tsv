@@ -1,0 +1,106 @@
+And(A, Not(A))	[]
+next premise_pairing
+-----------------------
+Xor(A, Not(A))	[['!A'], ['A']]
+next premise_pairing
+-----------------------
+B	[['B']]
+And(A, B)	[['A', 'B']]
+next premise_pairing
+-----------------------
+Not(A)	[['!A']]
+And(A, B)	[['A', 'B']]
+next premise_pairing
+-----------------------
+A	[['A']]
+And(A, B)	[['A', 'B']]
+B	[['B']]
+next premise_pairing
+-----------------------
+A	[['A']]
+And(A, B)	[['A', 'B']]
+And(A, B, C)	[['A', 'B', 'C']]
+next premise_pairing
+-----------------------
+A	[['A']]
+And(A, And(B, C))	[['A', 'B', 'C']]
+And(A, B, C)	[['A', 'B', 'C']]
+next premise_pairing
+-----------------------
+A	[['A']]
+And(A, B)	[['A', 'B']]
+And(B, A)	[['A', 'B']]
+next premise_pairing
+-----------------------
+And(A, B)	[['A', 'B']]
+And(A, Not(B))	[['A', '!B']]
+next premise_pairing
+-----------------------
+And(A, B)	[['A', 'B']]
+A	[['A']]
+Not(B)	[['!B']]
+next premise_pairing
+-----------------------
+Xor(A, B)	[['A', '!B'], ['!A', 'B']]
+A	[['A']]
+next premise_pairing
+-----------------------
+Xor(A, B)	[['A', '!B'], ['!A', 'B']]
+B	[['B']]
+next premise_pairing
+-----------------------
+Xor(A, B)	[['A', '!B'], ['!A', 'B']]
+And(A, B)	[['A', 'B']]
+next premise_pairing
+-----------------------
+A	[['A']]
+Xor(A, B)	[['A', '!B'], ['!A', 'B']]
+next premise_pairing
+-----------------------
+Xor(A, B)	[['A', '!B'], ['!A', 'B']]
+C	[['C']]
+next premise_pairing
+-----------------------
+A	[['A']]
+MulXor(A, B)	[['!A', '!B'], ['A', '!B'], ['!A', 'B'], ['A', 'B']]
+Not(B)	[['!B']]
+next premise_pairing
+-----------------------
+Not(A)	[['!A']]
+MulXor(A, B)	[['!A', '!B'], ['A', '!B'], ['!A', 'B'], ['A', 'B']]
+B	[['B']]
+next premise_pairing
+-----------------------
+Not(A)	[['!A']]
+Xor(A, B)	[['A', '!B'], ['!A', 'B']]
+B	[['B']]
+next premise_pairing
+-----------------------
+Xor(A, B)	[['A', '!B'], ['!A', 'B']]
+Not(B)	[['!B']]
+A	[['A']]
+next premise_pairing
+-----------------------
+Xor(A, B)	[['A', '!B'], ['!A', 'B']]
+Not(A)	[['!A']]
+And(Not(A), B, C)	[['!A', 'B', 'C']]
+next premise_pairing
+-----------------------
+Xor(A, B)	[['A', '!B'], ['!A', 'B']]
+Not(B)	[['!B']]
+And(A, Not(B))	[['A', '!B']]
+next premise_pairing
+-----------------------
+Xor(A, B)	[['A', '!B'], ['!A', 'B']]
+Not(A)	[['!A']]
+Not(B)	[['!B']]
+next premise_pairing
+-----------------------
+MulXor(A, B)	[['!A', '!B'], ['A', '!B'], ['!A', 'B'], ['A', 'B']]
+Xor(A, B)	[['A', '!B'], ['!A', 'B']]
+next premise_pairing
+-----------------------
+Xor(A, B)	[['A', '!B'], ['!A', 'B']]
+MulXor(A, B)	[['!A', '!B'], ['A', '!B'], ['!A', 'B'], ['A', 'B']]
+next premise_pairing
+-----------------------

@@ -27,7 +27,7 @@
 from sympy.logic.boolalg import Xor
 
 
-from collections import defaultdict
+from collections import Counter
 from itertools import combinations, product
 
 from sympy.core.basic import Basic
@@ -139,7 +139,7 @@ class MulXor(BooleanFunction):
 
     def __new__(cls, *args, **kwargs):
         argset = set([])
-        obj = super(Xor, cls).__new__(cls, *args, **kwargs)
+        obj = super(MulXor, cls).__new__(cls, *args, **kwargs)
         counts = Counter(obj._args)
         if counts[True] > 1:
             return false
@@ -231,16 +231,4 @@ class Possibly(BooleanFunction):
 Furthermore, [](A&B) entails []A&[]B and vice versa; while []A|[]B entails [](A|B), but not vice versa. This reflects the patterns exhibited by the universal quantifier: ∀x(A&B) entails ∀xA&∀xB and vice versa, while ∀xA ∨ ∀xB entails ∀x(A ∨ B) but not vice versa
 """
 
-from sympy import symbols
-A, B, C = symbols("A B C")
-a = ModalAnd(A, Possibly(B | C))
-necessaries = []
-# locals={
-#     "Possibly": Possibly,
-#     "ModalAnd": Modal
-# }
-b = ModalAnd(A, Necessary(ModalAnd(B, C)))
-print(necessaries)
-print(b)
-print(a)
-print(a.xreplace({A:True, B:True, C:False}))
+

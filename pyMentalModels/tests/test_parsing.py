@@ -5,7 +5,7 @@ import unittest
 
 # Package related imports
 from pyMentalModels.parsing.modal_parser import parse_expr, sympify_formatter
-from pyMentalModels.logical_connectives.operators import op_names, intuit_op
+from pyMentalModels.logical_connectives.operators import explicit_op, intuit_op
 
 
 expressions = [
@@ -95,7 +95,7 @@ class TestFormatter(unittest.TestCase):
 
     def test_formatting_expression_R_full(self):
         for due, parsed_expr in test_formatting_expr_R_full.items():
-            self.assertEqual(sympify_formatter(parsed_expr, op_names), due)
+            self.assertEqual(sympify_formatter(parsed_expr, explicit_op), due)
 
     def test_formatting_expression_R_intuit(self):
         for due, parsed_expr in test_formatting_expr_R_intuit.items():
@@ -106,7 +106,7 @@ from sympy.logic.boolalg import And, Or, Xor, Implies, sympify
 # from pyMentalModels.parsing.modal_parser import parse_expr, sympify_formatter
 # from pyMentalModels.reasoner.reasoner import populate_np_array
 # from pyMentalModels.data.expressions import expressions, parsed_expressions
-# from pyMentalModels.logical_connectives.operators import op_names
+# from pyMentalModels.logical_connectives.operators import explicit_op
 
 DEBUG = True
 
@@ -117,8 +117,8 @@ cat_dog_expr, triv_ragni_ex = parsed_expressions
 
 
 
-sympify_ready_triv_expr = sympify_formatter(triv_ragni_ex, op_names)
-sympify_ready_cat_dog_expr = sympify_formatter(cat_dog_expr, op_names)
+sympify_ready_triv_expr = sympify_formatter(triv_ragni_ex, explicit_op)
+sympify_ready_cat_dog_expr = sympify_formatter(cat_dog_expr, explicit_op)
 sympified_expr_triv = sympify(sympify_ready_triv_expr)
 sympified_expr_pars = sympify(sympify_ready_cat_dog_expr)
 #  }}} Sympify formatter (transforms list to string that is sympify-readable) #
