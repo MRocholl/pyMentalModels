@@ -48,11 +48,26 @@ def _eval_premise(premise_str):
 
 class TestLogicalOperators(unittest.TestCase):
 
-    def test_all_variations_neg_pos_connectives(self):
-        """ Test behavior for one junctors"""
+    def test_all_variations_neg_pos_connectives_sys1(self):
+        """ Test behavior for one junctor"""
 
-        A, B, C = symbols("A B C")  # defining symbols
-        print(A)
+        A, B = symbols("A B")  # defining symbols
+        print("Testing behavior for one junctor system 1")
+        for operator in (And, Or, Xor):
+            for valuations in product([0, 1], repeat=2):
+                first_arg, sec_arg = [~atom if value == 0 else atom for atom, value in zip([A, B], valuations)]
+                log_obj = operator(first_arg, sec_arg)
+                print(log_obj)
+                print("-------")
+                for el in sr.generate_possible_models(log_obj, intuitive=True):
+                    print(el)
+                print()
+
+    def test_all_variations_neg_pos_connectives_sys2(self):
+        """ Test behavior for one junctor"""
+
+        A, B = symbols("A B")  # defining symbols
+        print("Testing behavior for one junctor system 2")
         for operator in (And, Or, Xor, Implies, Equivalent):
             for valuations in product([0, 1], repeat=2):
                 first_arg, sec_arg = [~atom if value == 0 else atom for atom, value in zip([A, B], valuations)]
@@ -63,9 +78,24 @@ class TestLogicalOperators(unittest.TestCase):
                     print(el)
                 print()
 
-    def test_all_dual_variations(self):
+    def test_all_dual_variations_sys1(self):
         """ Test behavior for combinations of two junctors"""
         A, B, C = symbols("A B C")
+        print("Testing behavior for two junctors system 1")
+        for first, second in product([And, Or, Xor], repeat=2):
+            for valuations in product([0, 1], repeat=3):
+                first_arg, sec_arg, thrd_arg = [~atom if value == 0 else atom for atom, value in zip([A, B, C], valuations)]
+                log_obj = first(first_arg, second(sec_arg, thrd_arg))
+                print(log_obj)
+                print("-------")
+                for el in sr.generate_possible_models(log_obj, intuitive=True):
+                    print(el)
+                print()
+
+    def test_all_dual_variations_sys2(self):
+        """ Test behavior for combinations of two junctors"""
+        A, B, C = symbols("A B C")
+        print("Testing behavior for two junctors system 2")
         for first, second in product([And, Or, Xor, Implies, Equivalent, clc.MulXor], repeat=2):
             for valuations in product([0, 1], repeat=3):
                 first_arg, sec_arg, thrd_arg = [~atom if value == 0 else atom for atom, value in zip([A, B, C], valuations)]

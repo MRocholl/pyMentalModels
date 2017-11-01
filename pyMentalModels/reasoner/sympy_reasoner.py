@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
 
 from itertools import permutations, combinations
 from sympy.logic.boolalg import truth_table
@@ -17,14 +16,14 @@ def pretty_print_atom_assign(atoms, atom_assignment, intuitive):
     # TODO These guys need to take into account the possibility of explicitly representing negatives if explicitly given
     """
         Returns a string representation of the atoms
-        Atom. Assignment 0 --> "!atom"
+        Atom. Assignment 0 --> "¬atom"
         Atom. Assignment 1 --> "atom"
     """
     if intuitive:
         if any(value for atom, value in zip(atoms, atom_assignment)):
                 return [str(atom) if value else " " for atom, value in zip(atoms, atom_assignment)]
         else:
-                return ["¬{}".format(atom) for i, (atom, value) in enumerate(zip(atoms, atom_assignment)) if i == 0]
+                return ["¬{}".format(atom) for atom in atoms]
     return [str(atom) if value else "¬{}".format(atom) for atom, value in zip(atoms, atom_assignment)]
 
 

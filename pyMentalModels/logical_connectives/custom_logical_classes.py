@@ -44,6 +44,79 @@ from sympy import Eq
 
 #  }}} Imports #
 
+class Not(BooleanFunction):
+    """
+    Logical Not function (negation)
+
+
+    Returns True if the statement is False
+    Returns False if the statement is True
+
+    Examples
+    ========
+
+    >>> from sympy.logic.boolalg import Not, And, Or
+    >>> from sympy.abc import x, A, B
+    >>> Not(True)
+    False
+    >>> Not(False)
+    True
+    >>> Not(And(True, False))
+    True
+    >>> Not(Or(True, False))
+    False
+    >>> Not(And(And(True, x), Or(x, False)))
+    ~x
+    >>> ~x
+    ~x
+    >>> Not(And(Or(A, B), Or(~A, ~B)))
+    ~((A | B) & (~A | ~B))
+
+    Notes
+    =====
+
+    - The ``~`` operator is provided as a convenience, but note that its use
+      here is different from its normal use in Python, which is bitwise
+      not. In particular, ``~a`` and ``Not(a)`` will be different if ``a`` is
+      an integer. Furthermore, since bools in Python subclass from ``int``,
+      ``~True`` is the same as ``~1`` which is ``-2``, which has a boolean
+      value of True.  To avoid this issue, use the SymPy boolean types
+      ``true`` and ``false``.
+
+    >>> from sympy import true
+    >>> ~True
+    -2
+    >>> ~true
+    False
+
+    """
+
+    is_Not = True
+
+    @classmethod
+    def eval(cls, arg):
+        from sympy import (
+            Equality, GreaterThan, LessThan,
+            StrictGreaterThan, StrictLessThan, Unequality)
+        if isinstance(arg, Number) or arg in (True, False):
+            return false if arg else true
+        if arg.is_Not:
+            return arg.args[0]
+
+#        # Simplify Relational objects.
+#        if isinstance(arg, Equality):
+#            return Unequality(*arg.args)
+#        if isinstance(arg, Unequality):
+#            return Equality(*arg.args)
+#        if isinstance(arg, StrictLessThan):
+#            return GreaterThan(*arg.args)
+#        if isinstance(arg, StrictGreaterThan):
+#            return LessThan(*arg.args)
+#        if isinstance(arg, LessThan):
+#            return StrictGreaterThan(*arg.args)
+#        if isinstance(arg, GreaterThan):
+#            return StrictLessThan(*arg.args)
+
 
 class ModalAnd(LatticeOp, BooleanFunction):
     # XXX TODO  Change docstring to reflect modal logical behavior. Also got rid of all the relational stuff
