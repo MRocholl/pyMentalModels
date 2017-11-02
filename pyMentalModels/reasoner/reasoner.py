@@ -15,11 +15,12 @@
 
 """
 
-from sympy.logic.boolalg import And, Xor, Implies, Or
+from sympy.logic.boolalg import And, Xor, Implies, Or, Not, sympify
 from sympy.core.symbol import Symbol
 
 import numpy as np
 
+explicit_negated_atoms = set([])
 
 def populate_np_array(sympified_expr):
     # XXX might not be necessary anymore if sympy takes care of this
@@ -51,22 +52,55 @@ def populate_np_array(sympified_expr):
     sorted_atoms = list(sympified_expr.atoms())
     nr_atoms = len(sorted_atoms)
 
+    def type_of_args(argumentlist):
+        all_symbols = True
+        len_args = len(argumentlist)
+        for arg in argumentlist:
+            if not isinstance(arg, Symbol):
+                all_symbols = False
+            if isinstance(arg, Not):
+                if isinstance(sympified_expr.args[0], Symbol):
+                    explicit_negated_atoms.add(sympified_expr.args[0])
+                    print(explicit_negated_atoms)
+                    possible_models = sympified_expr.args[0]
+                    return possible_models
+    if isinstance(arg, Not):
+        if isinstance(sympified_expr.args[0], Symbol):
+            explicit_negated_atoms.add(sympified_expr.args[0])
+            print(explicit_negated_atoms)
+            possible_models = sympified_expr.args[0]
+            return possible_models
+
     if isinstance(sympified_expr, Xor):
         if all(isinstance(arg, Symbol) for arg in sympified_expr.args):
             possible_models = np.identity(nr_atoms, dtype=np.int8)
+            return possible_models
 
     if isinstance(sympified_expr, And):
         if all(isinstance(arg, Symbol) for arg in sympified_expr.args):
             possible_models = np.array([1 for _ in range(nr_atoms)])
+            return possible_models
+        if
 
     if isinstance(sympified_expr, Or):
         if all(isinstance(arg, Symbol) for arg in sympified_expr.args):
             possible_models = np.identity(nr_atoms, dtype=np.int8)
+            return possible_models
 
     if isinstance(sympified_expr, Implies):
         if all(isinstance(arg, Symbol) for arg in sympified_expr.args):
             raise NotImplementedError("Did not implement `Implies` yet")
 
-    modal_possible = dict(zip(sorted_atoms, np.any(possible_models, axis=1)))
-    modal_necessary = dict(zip(sorted_atoms, np.all(possible_models, axis=1)))
-    return modal_possible, modal_necessary, possible_models
+    return possible_models
+
+
+print(sympify("A & ~B"))
+print(populate_np_array(sympify("A & ~B")))
+
+
+
+
+
+
+# modal_possible = dict(zip(sorted_atoms, np.any(possible_models, axis=1)))
+# modal_necessary = dict(zip(sorted_atoms, np.all(possible_models, axis=1)))
