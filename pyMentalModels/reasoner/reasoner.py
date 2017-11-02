@@ -52,12 +52,16 @@ def populate_np_array(sympified_expr):
     sorted_atoms = list(sympified_expr.atoms())
     nr_atoms = len(sorted_atoms)
 
-    def type_of_args(argumentlist):
+    def preprocess_args(argumentlist):
         all_symbols = True
         len_args = len(argumentlist)
+
+        out_arg_list = []
+
         for arg in argumentlist:
             if not isinstance(arg, Symbol):
                 all_symbols = False
+                out_arg_list.append(arg)
             if isinstance(arg, Not):
                 if isinstance(sympified_expr.args[0], Symbol):
                     explicit_negated_atoms.add(sympified_expr.args[0])
