@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-
 """ File that collects numpy logic for mental model reasoner """
 
 # XXX Keep track of variable names. i.e. ((A | B) and A)
