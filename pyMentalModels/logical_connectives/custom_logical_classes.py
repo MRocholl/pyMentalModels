@@ -21,101 +21,14 @@
 
 
     """
-# XXX Will probalby need to subclass all operators to ensure modal logical behavior
 
-#  Imports {{{ #
 from sympy.logic.boolalg import Xor
-
-
 from collections import Counter
-from itertools import combinations, product
 
-from sympy.core.basic import Basic
 from sympy.core.cache import cacheit
 from sympy.core.numbers import Number
 from sympy.core.operations import LatticeOp
-from sympy.core.function import Application, Derivative
-from sympy.core.compatibility import ordered, range, with_metaclass, as_int
-from sympy.core.sympify import converter, _sympify, sympify
-from sympy.core.singleton import Singleton, S
-
-from sympy.logic.boolalg import *
-from sympy import Eq
-
-#  }}} Imports #
-
-class Not(BooleanFunction):
-    """
-    Logical Not function (negation)
-
-
-    Returns True if the statement is False
-    Returns False if the statement is True
-
-    Examples
-    ========
-
-    >>> from sympy.logic.boolalg import Not, And, Or
-    >>> from sympy.abc import x, A, B
-    >>> Not(True)
-    False
-    >>> Not(False)
-    True
-    >>> Not(And(True, False))
-    True
-    >>> Not(Or(True, False))
-    False
-    >>> Not(And(And(True, x), Or(x, False)))
-    ~x
-    >>> ~x
-    ~x
-    >>> Not(And(Or(A, B), Or(~A, ~B)))
-    ~((A | B) & (~A | ~B))
-
-    Notes
-    =====
-
-    - The ``~`` operator is provided as a convenience, but note that its use
-      here is different from its normal use in Python, which is bitwise
-      not. In particular, ``~a`` and ``Not(a)`` will be different if ``a`` is
-      an integer. Furthermore, since bools in Python subclass from ``int``,
-      ``~True`` is the same as ``~1`` which is ``-2``, which has a boolean
-      value of True.  To avoid this issue, use the SymPy boolean types
-      ``true`` and ``false``.
-
-    >>> from sympy import true
-    >>> ~True
-    -2
-    >>> ~true
-    False
-
-    """
-
-    is_Not = True
-
-    @classmethod
-    def eval(cls, arg):
-        from sympy import (
-            Equality, GreaterThan, LessThan,
-            StrictGreaterThan, StrictLessThan, Unequality)
-        if isinstance(arg, Number) or arg in (True, False):
-            return false if arg else true
-        if arg.is_Not:
-            return arg.args[0]
-
-#        # Simplify Relational objects.
-#        if isinstance(arg, Equality):
-#            return Unequality(*arg.args)
-#        if isinstance(arg, Unequality):
-#            return Equality(*arg.args)
-#        if isinstance(arg, StrictLessThan):
-#            return GreaterThan(*arg.args)
-#        if isinstance(arg, StrictGreaterThan):
-#            return LessThan(*arg.args)
-#        if isinstance(arg, LessThan):
-#            return StrictGreaterThan(*arg.args)
-#        if isinstance(arg, GreaterThan):
-#            return StrictLessThan(*arg.args)
+from sympy.logic.boolalg import BooleanFunction
 
 
 class ModalAnd(LatticeOp, BooleanFunction):
@@ -158,27 +71,6 @@ class ModalAnd(LatticeOp, BooleanFunction):
             else:
                 newargs.append(x)
         return LatticeOp._new_args_filter(newargs, And)
-
-    #def as_set(self):
-    #    """
-    #    Rewrite logic operators and relationals in terms of real sets.
-
-    #    Examples
-    #    ========
-
-    #    >>> from sympy import And, Symbol
-    #    >>> x = Symbol('x', real=True)
-    #    >>> And(x<2, x>-2).as_set()
-    #    Interval.open(-2, 2)
-    #    """
-    #    from sympy.sets.sets import Intersection
-    #    if len(self.free_symbols) == 1:
-    #        return Intersection(*[arg.as_set() for arg in self.args])
-    #    else:
-    #        raise NotImplementedError("Sorry, And.as_set has not yet been"
-    #                                  " implemented for multivariate"
-    #                                  " expressions")
-
 
 
 class MulXor(BooleanFunction):

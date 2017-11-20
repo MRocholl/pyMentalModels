@@ -47,3 +47,5 @@ def sympify_formatter(args, rules):
         # Sympify takes general form of Operator(#args > 2)
         return "{operator}({f_args})".format(operator=op,
                                              f_args=", ".join(arguments))
+
+print(sympify_formatter(parse_expr("A & (B | C) & (D ^ E)"), rules={"&": "And", "|": "Or", "^": "Xor"}))

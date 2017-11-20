@@ -3,9 +3,7 @@
 
 import numpy as np
 from itertools import product, combinations
-from sympy import symbols
-from sympy.logic.boolalg import (And, Or, Xor, Not,
-                                 )
+from sympy.logic.boolalg import (And, Or, Xor, Not,)
 from sympy.core.symbol import Symbol
 
 #######################################################################
@@ -105,18 +103,13 @@ def builder(sympified_expr):
         if op == "And":
             iter_models = iter(sub_models)
             merged_models = next(iter_models)
-            print("merged model")
-            print(merged_models, merged_models.shape)
             while True:
                 try:
                     model2 = next(iter_models)
-                    print(model2, model2.shape)
                 except StopIteration:
                     break
                 reshaped_merged_models = np.repeat(merged_models, len(model2), axis=0)
                 reshaped_model2 = np.tile(model2, (len(merged_models), 1))
-                print(reshaped_merged_models)
-                print(reshaped_model2)
                 merged_models = reshaped_merged_models + reshaped_model2
             return merged_models
         if op == "Xor":
@@ -195,7 +188,7 @@ def builder(sympified_expr):
                 :, list(map(lambda x: var_ind_map[x], symbol_list))
             ] = pos_valuations
             # create submodels for every submodel in submodel_list
-            modelized_submodels = [map_instance_to_operation(el)(el) for submodel in submodel_list]
+            modelized_submodels = [map_instance_to_operation(submodel)(submodel) for submodel in submodel_list]
             modelized_submodels.append(or_model)
             merged_sub_models = _merge_models(*modelized_submodels, op="Or")
             return merged_sub_models
@@ -227,7 +220,7 @@ def builder(sympified_expr):
                 :, list(map(lambda x: var_ind_map[x], symbol_list))
             ] = 1.
             # create submodels for every submodel in submodel_list
-            modelized_submodels = [map_instance_to_operation(el)(el) for submodel in submodel_list]
+            modelized_submodels = [map_instance_to_operation(submodel)(submodel) for submodel in submodel_list]
             modelized_submodels.append(and_model)
             merged_sub_models = _merge_models(*modelized_submodels, op="And")
             return merged_sub_models
@@ -253,19 +246,22 @@ def builder(sympified_expr):
                     symbol_list.append(el)
                 else:
                     submodel_list.append(el)
+            modelized_submodels = [map_instance_to_operation(submodel)(submodel) for submodel in submodel_list]
 
-            xor_model = np.empty((symbol_list, len(exp_atoms)))
-            xor_model[
-                :, list(map(lambda x: var_ind_map[x], symbol_list))
-            ] = np.eye(len(symbol_list))
+            if symbol_list:
+                xor_model = np.empty((symbol_list, len(exp_atoms)))
+                xor_model[
+                    :, list(map(lambda x: var_ind_map[x], symbol_list))
+                ] = np.eye(len(symbol_list))
+                modelized_submodels.append(xor_model)
+
             # Create `or` model for the symbols
-            modelized_submodels = [map_instance_to_operation(el)(el) for submodel in submodel_list]
-            modelized_submodels.append(xor_model)
             merged_sub_models = _merge_models(*modelized_submodels, op="Xor")
             return merged_sub_models
 
     def build_not(exp):
         arg = exp.args[0]
+        print(arg)
         assert isinstance(exp, Not)
         if isinstance(arg, Symbol):
             not_model = np.empty((1, len(exp_atoms)))
@@ -276,24 +272,15 @@ def builder(sympified_expr):
         else:
             model_positive = map_instance_to_operation(arg)(arg)
             print(model_positive)
+            raise NotImplementedError(
+                " Did not implement Negation of sub-expression yet. "
+            )
 
     def _increasing_ones_first_sort(array_slice):
                     pos_of_ones = [-array_slice[i] for i, _ in enumerate(array_slice)]
                     return array_slice.count(1), pos_of_ones
 
     return map_instance_to_operation(sympified_expr)(sympified_expr)
-
-
-def tests():
-    A, B, C = symbols("A B C")
-    exp = Or(A, ~B, C)
-    print(exp)
-    for model in builder(exp):
-        print(list(chr(97 + i) if el == 1. else "" if el == 0 else "-{}".format(chr(97 + i)) if el == -1 else "" for i, el in enumerate(model)))
-    # print(builder(Or(A, B, C)))
-
-
-print(tests())
 
 
 #######################################################################

@@ -44,6 +44,7 @@ def build_or(array_or_exp):
             nr_args = len(or_args)
             pos_valuations = [x for x in product(range(2), repeat=nr_args)][1:]
             or_array = np.asarray(sorted(pos_valuations, key=_increasing_ones_first_sort))
+            print(or_array)
             return or_array
         else:
             for el in array_or_exp:

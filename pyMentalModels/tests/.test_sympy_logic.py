@@ -8,9 +8,9 @@ from sympy import sympify, symbols
 from sympy.logic.boolalg import And, Or, Xor, Implies, Equivalent
 
 import pyMentalModels.logical_connectives.operators as op
-import pyMentalModels.logical_connectives.custom_logical_classes as clc
 import pyMentalModels.parsing.modal_parser as mp
-import pyMentalModels.reasoner.sympy_reasoner as sr
+# import pyMentalModels.reasoner.sympy_reasoner as sr
+# import pyMentalModels.logical_connectives.custom_logical_classes as clc
 
 
 test_premise_pairings = [

@@ -3,14 +3,19 @@
 import unittest
 
 import pyMentalModels.logical_connectives.operators as op
-import pyMentalModels.logical_connectives.custom_logical_classes as clc
 import pyMentalModels.parsing.modal_parser as mp
-import pyMentalModels.reasoner.sympy_reasoner as sr
+import pyMentalModels.reasoner.numpy_reasoner as nr
 from sympy import sympify
+
+""" Modal logical stuff and stuff regarding sympy.truthtable solution"""
+# import pyMentalModels.reasoner.sympy_reasoner as sr
+# import pyMentalModels.logical_connectives.custom_logical_classes as clc
 
 
 def _eval_premise(premise_str):
-    return sr.generate_possible_models(sympify(mp.sympify_formatter(mp.parse_expr(premise_str), op.intuit_op), locals={"MulXor": clc.MulXor}))
+    # return sr.generate_possible_models(sympify(mp.sympify_formatter(mp.parse_expr(premise_str), op.intuit_op), locals={"MulXor": clc.MulXor}))
+    return nr.builder(sympify(mp.sympify_formatter(mp.parse_expr(premise_str), op.intuit_op)))
+
 
 class TestLispCases(unittest.TestCase):
     def test_basic_cases(self):
