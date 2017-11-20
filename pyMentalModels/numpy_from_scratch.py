@@ -99,21 +99,24 @@ def builder(sympified_expr):
         sub_models: List of arbitrary #sub_models
             submodels to be merged together
         """
-        print(sub_models)
+        print("Merging models")
         assert(len(sub_models)) >= 2
 
         if op == "And":
             iter_models = iter(sub_models)
             merged_models = next(iter_models)
+            print("merged model")
+            print(merged_models, merged_models.shape)
             while True:
                 try:
                     model2 = next(iter_models)
+                    print(model2, model2.shape)
                 except StopIteration:
                     break
-                print(model2.shape)
                 reshaped_merged_models = np.repeat(merged_models, len(model2), axis=0)
-                reshaped_model2 = np.tile(model2, (len(reshaped_merged_models), 1))
-                print(reshaped_merged_models, reshaped_model2)
+                reshaped_model2 = np.tile(model2, (len(merged_models), 1))
+                print(reshaped_merged_models)
+                print(reshaped_model2)
                 merged_models = reshaped_merged_models + reshaped_model2
             return merged_models
         if op == "Xor":
@@ -132,7 +135,6 @@ def builder(sympified_expr):
             xor_models = _merge_models(*sub_models, op="Xor")
 
             merged_models = xor_models
-
             # then piecewise and everything
             list_of_piecewise_ands = [
                 _merge_models(*comb, op="And")
@@ -154,7 +156,7 @@ def builder(sympified_expr):
             (Or, build_or),
             (And, build_and),
             (Xor, build_xor),
-            # (Not, build_not), // Not yet supported
+            (Not, build_not),
         ))
         try:
             return next(builder for type_, builder in maps if isinstance(el, type_))
@@ -192,7 +194,6 @@ def builder(sympified_expr):
             or_model[
                 :, list(map(lambda x: var_ind_map[x], symbol_list))
             ] = pos_valuations
-            print(or_model)
             # create submodels for every submodel in submodel_list
             modelized_submodels = [map_instance_to_operation(el)(el) for submodel in submodel_list]
             modelized_submodels.append(or_model)
@@ -263,8 +264,18 @@ def builder(sympified_expr):
             merged_sub_models = _merge_models(*modelized_submodels, op="Xor")
             return merged_sub_models
 
-    def build_not(model):
-        pass
+    def build_not(exp):
+        arg = exp.args[0]
+        assert isinstance(exp, Not)
+        if isinstance(arg, Symbol):
+            not_model = np.empty((1, len(exp_atoms)))
+            not_model[
+                :, var_ind_map[arg]
+            ] = -1.
+            return not_model
+        else:
+            model_positive = map_instance_to_operation(arg)(arg)
+            print(model_positive)
 
     def _increasing_ones_first_sort(array_slice):
                     pos_of_ones = [-array_slice[i] for i, _ in enumerate(array_slice)]
@@ -275,9 +286,10 @@ def builder(sympified_expr):
 
 def tests():
     A, B, C = symbols("A B C")
-    print(And(A, B, C))
-    for model in builder(Or(A, B, C)):
-        print(list(chr(97 + i) if el == 1. else "" for i, el in enumerate(model)))
+    exp = Or(A, ~B, C)
+    print(exp)
+    for model in builder(exp):
+        print(list(chr(97 + i) if el == 1. else "" if el == 0 else "-{}".format(chr(97 + i)) if el == -1 else "" for i, el in enumerate(model)))
     # print(builder(Or(A, B, C)))
 
 
