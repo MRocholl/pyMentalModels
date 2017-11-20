@@ -44,6 +44,28 @@ The implementation for the material implication `Implies` is not quite clear yet
 The staight-forward way would be to duck-type it to the `And` behavior.
 
 
+
+The problem child `Not`
+
+The builder catches Nots as not being a symbol and will eventually try to
+construct a model of a `Not(Atom)` or `Not(sub_expr)`
+
+Examples of this behaviour would be:
+
+    Not(A) or B             | (A | B) & ~(C | D) // Crete full model
+                            |                    // and take complement
+    Result should be:       | Result should be:
+                            |                            |  C
+    ~A                      |   A       ~C  ~D <-- from  |      D
+        B                   |       B   ~C  ~D           |  C   D
+    ~A  B                   |This does look probelmatic.
+
+Hence, an explicit `Not` in the expression will lead to an explicit `Not`
+representation in the final model.
+There seems to be a big difference in the semantic importance between the
+negation of an atom and the negation of a submodel.
+
+
 """
 
 
@@ -88,8 +110,10 @@ def builder(sympified_expr):
                     model2 = next(iter_models)
                 except StopIteration:
                     break
+                print(model2.shape)
                 reshaped_merged_models = np.repeat(merged_models, len(model2), axis=0)
-                reshaped_model2 = np.vstack((model2, model2))
+                reshaped_model2 = np.tile(model2, (len(reshaped_merged_models), 1))
+                print(reshaped_merged_models, reshaped_model2)
                 merged_models = reshaped_merged_models + reshaped_model2
             return merged_models
         if op == "Xor":
@@ -104,9 +128,7 @@ def builder(sympified_expr):
             return merged_models
 
         if op == "Or":
-
             # first xor everything
-            print(len(sub_models))
             xor_models = _merge_models(*sub_models, op="Xor")
 
             merged_models = xor_models
@@ -132,6 +154,7 @@ def builder(sympified_expr):
             (Or, build_or),
             (And, build_and),
             (Xor, build_xor),
+            # (Not, build_not), // Not yet supported
         ))
         try:
             return next(builder for type_, builder in maps if isinstance(el, type_))
@@ -162,25 +185,19 @@ def builder(sympified_expr):
                 else:
                     submodel_list.append(el)
 
+            # Create `or` model for the symbols
             pos_valuations = [x for x in product(range(2), repeat=len(symbol_list))][1:]
             pos_valuations = sorted(pos_valuations, key=_increasing_ones_first_sort)
             or_model = np.empty((len(pos_valuations), len(exp_atoms)))
             or_model[
                 :, list(map(lambda x: var_ind_map[x], symbol_list))
             ] = pos_valuations
-            # Create `or` model for the symbols
+            print(or_model)
+            # create submodels for every submodel in submodel_list
             modelized_submodels = [map_instance_to_operation(el)(el) for submodel in submodel_list]
             modelized_submodels.append(or_model)
             merged_sub_models = _merge_models(*modelized_submodels, op="Or")
             return merged_sub_models
-            # len_submodel = len(submodel)
-            # get all submodels
-            # repeat values for first submodel as often as their are arguments for the operator
-
-            # or_array = np.asarray([x for x in product(range(2), repeat=2)][1:])
-            # or_array = np.ones((len(exp), len(exp[0]) + 1))
-            # or_array[:, :-1] = exp
-            return modelized_submodels
 
     def build_and(exp):
 
@@ -194,29 +211,57 @@ def builder(sympified_expr):
                 :, list(map(lambda x: var_ind_map[x], and_args))
             ] = 1.
             return and_model
+        else:
+            symbol_list = []
+            submodel_list = []
+            for el in exp.args:
+                if isinstance(el, Symbol):
+                    symbol_list.append(el)
+                else:
+                    submodel_list.append(el)
+
+            # Create `and` model for the symbols
+            and_model = np.empty((1, len(exp_atoms)))
+            and_model[
+                :, list(map(lambda x: var_ind_map[x], symbol_list))
+            ] = 1.
+            # create submodels for every submodel in submodel_list
+            modelized_submodels = [map_instance_to_operation(el)(el) for submodel in submodel_list]
+            modelized_submodels.append(and_model)
+            merged_sub_models = _merge_models(*modelized_submodels, op="And")
+            return merged_sub_models
 
     def build_xor(exp):
-        if isinstance(exp, np.ndarray):
-            xor_array = np.ones((len(exp), len(exp[0]) + 1))
-            xor_array[:, :-1] = exp
-            return xor_array
 
-        elif isinstance(exp, Xor):
-            # Check if everything is a Symbol
-            arguments = exp.args
-            seen_not_list = []
-            for el in arguments:
-                if isinstance(el, Not):
-                    seen_not_list.append(el)
-                    return build_not(el)
-                elif not isinstance(el, Symbol):
-                    return map_instance_to_operation(el)(el)
+        assert(isinstance(exp, Xor))
+
+        xor_args = exp.args
+        nr_args = len(xor_args)
+
+        if all(isinstance(el, Symbol) for el in exp.args):
+            xor_model = np.empty((nr_args, len(exp_atoms)))
+            xor_model[
+                :, list(map(lambda x: var_ind_map[x], xor_args))
+            ] = np.eye(nr_args)
+            return xor_model
+        else:
+            symbol_list = []
+            submodel_list = []
+            for el in exp.args:
+                if isinstance(el, Symbol):
+                    symbol_list.append(el)
                 else:
-                    pass
-            if all(isinstance(el, Symbol) for el in arguments):
-                return np.ones(len(exp.atoms()))
-            if any(isinstance(el, Not) for el in arguments):
-                return "Witnessed a Not at this place"
+                    submodel_list.append(el)
+
+            xor_model = np.empty((symbol_list, len(exp_atoms)))
+            xor_model[
+                :, list(map(lambda x: var_ind_map[x], symbol_list))
+            ] = np.eye(len(symbol_list))
+            # Create `or` model for the symbols
+            modelized_submodels = [map_instance_to_operation(el)(el) for submodel in submodel_list]
+            modelized_submodels.append(xor_model)
+            merged_sub_models = _merge_models(*modelized_submodels, op="Xor")
+            return merged_sub_models
 
     def build_not(model):
         pass
@@ -228,17 +273,11 @@ def builder(sympified_expr):
     return map_instance_to_operation(sympified_expr)(sympified_expr)
 
 
-def _merge_models(model1, model2):
-        reshaped_model1 = np.repeat(model1, len(model2), axis=0)
-        reshaped_model2 = np.vstack(model2, model2)
-        merged_models = reshaped_model1 + reshaped_model2
-        merged_models[merged_models >= 1] = 1
-        return merged_models
-
-
 def tests():
     A, B, C = symbols("A B C")
-    print(builder(Or(A, And(B, C))))
+    print(And(A, B, C))
+    for model in builder(Or(A, B, C)):
+        print(list(chr(97 + i) if el == 1. else "" for i, el in enumerate(model)))
     # print(builder(Or(A, B, C)))
 
 
@@ -249,8 +288,25 @@ print(tests())
 #              Stuff that i do not need but keep anyways              #
 #######################################################################
 
-# XXX The following should never happen.
+# XXX The following should never happen. Input should never be an array
 # if isinstance(exp, np.ndarray):
 #     and_array = np.ones((len(exp), len(exp[0]) + 1))
 #     and_array[:, :-1] = exp
 #     return and_array
+
+# XXX Stuff from Xor
+# if all(isinstance(el, Symbol) for el in arguments):
+#             return np.ones(len(exp.atoms()))
+#
+#         # Check if everything is a Symbol
+#         for el in arguments:
+#             if isinstance(el, Not):
+#                 seen_not_list.append(el)
+#                 return build_not(el)
+#             elif not isinstance(el, Symbol):
+#                 return map_instance_to_operation(el)(el)
+#             else:
+#                 pass
+#         if any(isinstance(el, Not) for el in arguments):
+#             return "Witnessed a Not at this place"
+#
