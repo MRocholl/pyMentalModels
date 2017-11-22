@@ -308,6 +308,7 @@ def build_not(exp, atom_index_mapping, exp_atoms):
         return not_model
     else:
         model_positive = map_instance_to_operation(neg_arg)(neg_arg, atom_index_mapping, exp_atoms)
+        print(model_positive)
         raise NotImplementedError(
             " Did not implement Negation of sub-expression yet. "
         )

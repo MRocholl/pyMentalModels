@@ -11,6 +11,10 @@ from itertools import product
 from pyMentalModels.reasoner.numpy_reasoner import mental_model_builder
 
 
+class NotSureThisIsRightError(NotImplementedError):
+    """ Error that gets raised when Im not sure result is right"""
+
+
 class TestNumpyModels(unittest.TestCase):
     """ Class that tests behavior of all numpy model constructors of the logical operators
     """
@@ -61,13 +65,37 @@ class TestNumpyModels(unittest.TestCase):
         model = mental_model_builder(expr)
         npt.assert_allclose(model, np.array([[-1., -1.]]))
 
-#     def test(self):
-#         A, B, C = symbols("A B C")
-#         exp = Or(A, ~B, C)
-#         print(exp)
-#         for model in mental_model_builder(exp):
-#             print(list(chr(97 + i) if el == 1. else "" if el == 0 else "-{}".format(chr(97 + i)) if el == -1 else "" for i, el in enumerate(model)))
-#     # print(mental_model_builder(Or(A, B, C)))
+    def test_print_long_example(self):
+        A, B, C, D, E, F, G = self.alpha_symbols
+        expr = And(A, Or(B, C), Xor(D, E))
+        model = mental_model_builder(expr)
+        npt.assert_allclose(
+            model,
+            np.array(
+                [
+                    [1., 1., 0., 1., 0.],
+                    [1., 1., 0., 0., 1.],
+                    [1., 0., 1., 1., 0.],
+                    [1., 0., 1., 0., 1.],
+                    [1., 1., 1., 1., 0.],
+                    [1., 1., 1., 0., 1.]
+                ]))
+
+    def test_B_in_or_xor(self):
+        A, B, C, D = symbols("A B C D")
+        expr = And(A, Or(B, C), Xor(B, D))
+        model = mental_model_builder(expr)
+        npt.assert_allclose(
+            model,
+            np.array(
+                [[1., 2., 0., 0.],
+                 [1., 1., 0., 1.],
+                 [1., 1., 1., 0.],
+                 [1., 0., 1., 1.],
+                 [1., 2., 1., 0.],
+                 [1., 1., 1., 1.]]))
+        raise NotSureThisIsRightError("Xor and Or might conflict")
+
 #    def test_all_variations_neg_pos_connectives_sys2(self):
 #        """ Test behavior for one junctor"""
 #

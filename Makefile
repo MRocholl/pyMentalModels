@@ -1,2 +1,8 @@
+install:
+	( \
+	virtualenv .env; \
+	source .env/bin/activate; \
+	pip install -r requirements.txt; \
+	)
 test:
-	python3 -m unittest discover
+	pytest
