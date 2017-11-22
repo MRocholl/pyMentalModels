@@ -2,11 +2,13 @@
 
 
 import unittest
+import numpy as np
+import numpy.testing as npt
 
-from sympy import sympify, symbols
+from sympy import symbols
 from sympy.logic.boolalg import And, Or, Xor, Implies, Equivalent, Not
 from itertools import product
-from pyMentalModels.reasoner.numpy_reasoner import builder
+from pyMentalModels.reasoner.numpy_reasoner import mental_model_builder
 
 
 class TestNumpyModels(unittest.TestCase):
@@ -17,54 +19,55 @@ class TestNumpyModels(unittest.TestCase):
     def test_and(self):
         A, B = self.alpha_symbols[:2]
         expr = And(A, B)
-        print(builder(expr))
+        model = mental_model_builder(expr)
+        npt.assert_allclose(model, np.array([[1., 1.]]))
 
     def test_or(self):
         A, B = self.alpha_symbols[:2]
         expr = Or(A, B)
-        print(builder(expr))
+        model = mental_model_builder(expr)
+        npt.assert_allclose(
+            model, np.array([[1., 0.],
+                             [0., 1.],
+                             [1., 1.]]))
 
     def test_implies(self):
         A, B = self.alpha_symbols[:2]
         expr = Implies(A, B)
-        print(builder(expr))
+        model = mental_model_builder(expr)
+        npt.assert_allclose(model, np.array([[1., 1.]]))
 
     def test_xor(self):
         A, B = self.alpha_symbols[:2]
         expr = Xor(A, B)
-        print(builder(expr))
+        model = mental_model_builder(expr)
+        npt.assert_allclose(model, np.array([[1., 0.], [0., 1.]]))
 
     def test_equals(self):
         A, B = self.alpha_symbols[:2]
         expr = Equivalent(A, B)
-        print(builder(expr))
+        model = mental_model_builder(expr)
+        npt.assert_allclose(model, np.array([[1., 1.]]))
 
     def test_not(self):
         A, B = self.alpha_symbols[:2]
         expr = Not(A)
-        print(builder(expr))
+        model = mental_model_builder(expr)
+        npt.assert_allclose(model, np.array([[-1.]]))
 
-    def test_all_variations_neg_pos_connectives_sys1(self):
-        """ Test behavior for one junctor"""
-        A, B, C, D, E, F, G = symbols("A B C D E F G")  # defining symbols
-        print("Testing behavior for one junctor system 1")
-        for operator in (And, Or, Xor):
-            for valuations in product([0, 1], repeat=2):
-                first_arg, sec_arg = [~atom if value == 0 else atom for atom, value in zip([A, B], valuations)]
-                log_obj = operator(first_arg, sec_arg)
-                print(log_obj)
-                print("-------")
-                for el in builder(log_obj):
-                    print(el)
-                print()
+    def test_and_negA_negB(self):
+        A, B = self.alpha_symbols[:2]
+        expr = And(~A, ~B)
+        model = mental_model_builder(expr)
+        npt.assert_allclose(model, np.array([[-1., -1.]]))
 
-    def test(self):
-        A, B, C = symbols("A B C")
-        exp = Or(A, ~B, C)
-        print(exp)
-        for model in builder(exp):
-            print(list(chr(97 + i) if el == 1. else "" if el == 0 else "-{}".format(chr(97 + i)) if el == -1 else "" for i, el in enumerate(model)))
-    # print(builder(Or(A, B, C)))
+#     def test(self):
+#         A, B, C = symbols("A B C")
+#         exp = Or(A, ~B, C)
+#         print(exp)
+#         for model in mental_model_builder(exp):
+#             print(list(chr(97 + i) if el == 1. else "" if el == 0 else "-{}".format(chr(97 + i)) if el == -1 else "" for i, el in enumerate(model)))
+#     # print(mental_model_builder(Or(A, B, C)))
 #    def test_all_variations_neg_pos_connectives_sys2(self):
 #        """ Test behavior for one junctor"""
 #
@@ -126,3 +129,6 @@ class TestNumpyModels(unittest.TestCase):
 #                possible_models = sr.generate_possible_models(sympified_expression, intuitive=False)
 #                print(possible_models)
 #
+
+if __name__ == "__main__":
+    unittest.main()

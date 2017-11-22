@@ -49,6 +49,7 @@ tests_parsing = {
 
 }
 
+
 tests_parsing_non_dyadic = {
     "A | B | C | D": ['A', '|', 'B', '|', 'C', '|', 'D'],
     "(A ^ B) & C": [['A', '^', 'B'], '&', 'C'],
@@ -90,6 +91,10 @@ class TestParse(unittest.TestCase):
             parsed_premise = parse_expr(premise).asList()
             self.assertEqual(parsed_premise, due)
 
+    def test_A_and_BorC_and_DxorE(self):
+        parsed_premise = parse_expr("A & (B | C) & (D ^ E)").asList()
+        self.assertEqual(parsed_premise, ['A', '&', ['B', '|', 'C'], '&', ['D', '^', 'E']])
+
 
 class TestFormatter(unittest.TestCase):
 
@@ -100,7 +105,6 @@ class TestFormatter(unittest.TestCase):
     def test_formatting_expression_R_intuit(self):
         for due, parsed_expr in test_formatting_expr_R_intuit.items():
             self.assertEqual(sympify_formatter(parsed_expr, intuit_op), due)
-
 
 
 if __name__ == "__main__":

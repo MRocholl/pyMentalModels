@@ -48,4 +48,3 @@ def sympify_formatter(args, rules):
         return "{operator}({f_args})".format(operator=op,
                                              f_args=", ".join(arguments))
 
-print(sympify_formatter(parse_expr("A & (B | C) & (D ^ E)"), rules={"&": "And", "|": "Or", "^": "Xor"}))
