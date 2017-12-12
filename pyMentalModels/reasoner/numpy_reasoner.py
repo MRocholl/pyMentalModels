@@ -5,11 +5,14 @@ import numpy as np
 from itertools import product, combinations
 from sympy.logic.boolalg import (And, Or, Xor, Not, Implies, Equivalent)
 from sympy.core.symbol import Symbol
+from sympy import symbols
 
 #######################################################################
 #                            Notes to self                            #
 #######################################################################
-
+# XXX Builds model of an expression successfully
+# Also does not care how many arguments Xor takes (psychologically viable)
+#
 """
 
 Addinf to models together happens in function of the upper level operator
@@ -158,6 +161,9 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
                 reshaped_merged_models = np.repeat(merged_models, len(model), axis=0)
                 reshaped_model2 = np.tile(model, (len(merged_models), 1))
                 merged_models = reshaped_merged_models + reshaped_model2
+
+        merged_models[merged_models > 0] = 1
+        merged_models[merged_models < 0] = -1
         return merged_models
 
     if op == "Xor":
@@ -196,6 +202,8 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
         merged_models = next(iter_models)
         for model in iter_models:
             merged_models = np.vstack((merged_models, model))
+        merged_models[merged_models > 0] = 1
+        merged_models[merged_models < 0] = -1
         return merged_models
 
     if op == "Or":
@@ -214,6 +222,9 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
         and_everything = _merge_models(*sub_models, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms, op="And")
 
         merged_models = np.vstack((merged_models, and_everything))
+
+        merged_models[merged_models > 0] = 1
+        merged_models[merged_models < 0] = -1
         return merged_models
 
 
@@ -255,10 +266,13 @@ def build_or(exp, atom_index_mapping, exp_atoms):
     Parameters
     ----------
     exp:
+        expression with outer-most logical operator being `Or`
 
     atom_index_mapping:
+        mapping from all the atoms to their index in the model/array
 
     exp_atoms:
+        List of all the Atoms of the mental_model
 
     Returns
     -------
@@ -387,6 +401,9 @@ def build_xor(exp, atom_index_mapping, exp_atoms):
 
 
 def build_not(exp, atom_index_mapping, exp_atoms):
+    """
+    Builds model of expression with outer-most argument being Not
+    """
     neg_arg = exp.args[0]
     assert isinstance(exp, Not)
     if isinstance(neg_arg, Symbol):
@@ -397,18 +414,16 @@ def build_not(exp, atom_index_mapping, exp_atoms):
         return not_model
     else:
         model_positive = map_instance_to_operation(neg_arg)(neg_arg, atom_index_mapping, exp_atoms)
-        print(model_positive)
-        raise NotImplementedError(
-            " Did not implement Negation of sub-expression yet. "
-        )
+        neg_model = _complement_array_model(model_positive, atom_index_mapping, exp_atoms)
+        return neg_model
 
 
 def _increasing_ones_first_sort(array_slice):
-                pos_of_ones = [-array_slice[i] for i, _ in enumerate(array_slice)]
-                return array_slice.count(1), pos_of_ones
+    """ Helper function to sort models by atom"""
+    pos_of_ones = [-array_slice[i] for i, _ in enumerate(array_slice)]
+    return array_slice.count(1), pos_of_ones
 
 
 # print(_merge_models(np.array([[1., 1., 0.]]), np.array([[0., 0., 0.], [0., 1., 0.], [0., 0., 1.]]), atom_index_mapping=None, exp_atoms=None, op="And"))
-from sympy import symbols
 A, B, C = symbols("A B C")
-print(mental_model_builder(Or((A & B), (B & C))))
+print(mental_model_builder(Not(A) | B))
