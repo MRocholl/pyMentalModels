@@ -7,7 +7,7 @@ import numpy.testing as npt
 
 from sympy import symbols
 from sympy.logic.boolalg import And, Or, Xor, Implies, Equivalent, Not
-from itertools import product
+# from itertools import product
 from pyMentalModels.reasoner.numpy_reasoner import mental_model_builder
 
 
@@ -15,7 +15,7 @@ class NotSureThisIsRightError(NotImplementedError):
     """ Error that gets raised when Im not sure result is right"""
 
 
-class TestNumpyModels(unittest.TestCase):
+class TestNumpySimpleModels(unittest.TestCase):
     """ Class that tests behavior of all numpy model constructors of the logical operators
     """
     alpha_symbols = symbols("A B C D E F G")  # defining symbols
@@ -34,6 +34,12 @@ class TestNumpyModels(unittest.TestCase):
             model, np.array([[1., 0.],
                              [0., 1.],
                              [1., 1.]]))
+
+    def test_A_or_A(self):
+        A, B = self.alpha_symbols[:2]
+        expr = Or(A, A)
+        model = mental_model_builder(expr)
+        npt.assert_allclose(model, np.array([[1.]]))
 
     def test_implies(self):
         A, B = self.alpha_symbols[:2]
@@ -59,11 +65,22 @@ class TestNumpyModels(unittest.TestCase):
         model = mental_model_builder(expr)
         npt.assert_allclose(model, np.array([[-1.]]))
 
+    def test_not_A_and_B(self):
+        A, B = self.alpha_symbols[:2]
+        expr = And(Not(A), B)
+        model = mental_model_builder(expr)
+        npt.assert_allclose(model, np.array([[-1., 1.]]))
+
     def test_and_negA_negB(self):
         A, B = self.alpha_symbols[:2]
         expr = And(~A, ~B)
         model = mental_model_builder(expr)
         npt.assert_allclose(model, np.array([[-1., -1.]]))
+
+
+class TestComposedModels(unittest.TestCase):
+
+    alpha_symbols = symbols("A B C D E F G")  # defining symbols
 
     def test_print_long_example(self):
         A, B, C, D, E, F, G = self.alpha_symbols
@@ -72,14 +89,14 @@ class TestNumpyModels(unittest.TestCase):
         npt.assert_allclose(
             model,
             np.array(
-                [
-                    [1., 1., 0., 1., 0.],
-                    [1., 1., 0., 0., 1.],
-                    [1., 0., 1., 1., 0.],
-                    [1., 0., 1., 0., 1.],
-                    [1., 1., 1., 1., 0.],
-                    [1., 1., 1., 0., 1.]
-                ]))
+                [[1.0, 1.0, 0.0, 1.0, 0.0],
+                 [1.0, 1.0, 0.0, 0.0, 1.0],
+                 [1.0, 0.0, 1.0, 1.0, 0.0],
+                 [1.0, 0.0, 1.0, 0.0, 1.0],
+                 [1.0, 1.0, 1.0, 1.0, 0.0],
+                 [1.0, 1.0, 1.0, 0.0, 1.0]]
+            )
+        )
 
     def test_B_in_or_xor(self):
         A, B, C, D = symbols("A B C D")
@@ -87,13 +104,26 @@ class TestNumpyModels(unittest.TestCase):
         model = mental_model_builder(expr)
         npt.assert_allclose(
             model,
+            np.array([[1.0, 2.0, 0.0, 0.0],
+                      [1.0, 2.0, 1.0, 0.0],
+                      [1.0, 1.0, 1.0, 0.0],
+                      [1.0, 1.0, 0.0, 1.0],
+                      [1.0, 0.0, 1.0, 1.0],
+                      [1.0, 1.0, 1.0, 1.0]])
+        )
+        raise NotSureThisIsRightError("Xor and Or might conflict")
+
+    def test_A_and_B_XOR_B_and_C(self):
+        A, B, C, D = symbols("A B C D")
+        expr = Xor(And(A, B), And(B, C))
+        model = mental_model_builder(expr)
+        print("this is is the interesting part", model)
+        npt.assert_allclose(
+            model,
             np.array(
-                [[1., 2., 0., 0.],
-                 [1., 1., 0., 1.],
-                 [1., 1., 1., 0.],
-                 [1., 0., 1., 1.],
-                 [1., 2., 1., 0.],
-                 [1., 1., 1., 1.]]))
+                [[1., 1., 0.],
+                 [0., 1., 1.],
+                 [1., 2., 1.]]))
         raise NotSureThisIsRightError("Xor and Or might conflict")
 
 #    def test_all_variations_neg_pos_connectives_sys2(self):
@@ -157,6 +187,7 @@ class TestNumpyModels(unittest.TestCase):
 #                possible_models = sr.generate_possible_models(sympified_expression, intuitive=False)
 #                print(possible_models)
 #
+
 
 if __name__ == "__main__":
     unittest.main()
