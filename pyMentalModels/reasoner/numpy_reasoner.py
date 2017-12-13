@@ -350,11 +350,8 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
                         submodel[atom_indices_to_check] == model[:, atom_indices_to_check].flatten(),
                         :
                     ]  # this returns the models that are compatible with the preexisiting merged_model
-                    print(allowed_models)
-                    if not allowed_models:
+                    if not allowed_models.size:
                         continue
-                    print(allowed_models)
-                    print(allowed_models.shape)
                     reshaped_submodel = np.repeat(submodel, len(allowed_models), axis=0)
                     submodel_added_with_allowed_models = reshaped_submodel + allowed_models
                     sub_models_merged_model.append(submodel_added_with_allowed_models)
