@@ -6,6 +6,7 @@ from itertools import product, combinations
 from sympy.logic.boolalg import (And, Or, Xor, Not, Implies, Equivalent)
 from sympy.core.symbol import Symbol
 from sympy import symbols
+from enum import Enum
 
 #######################################################################
 #                            Notes to self                            #
@@ -13,6 +14,32 @@ from sympy import symbols
 # XXX Builds model of an expression successfully
 # Also does not care how many arguments Xor takes (psychologically viable)
 #
+# TODO Indroduce choice between system 1 and system 2
+# Proposed solution:
+#
+
+# The sentence               The mental                The fully explicit models
+#                            models of its
+#                            possibilities
+# ==========================|=========================|================================
+# A And B                   |       A   B             |              A   B
+# --------------------------|-------------------------|--------------------------------
+# Neither A nor B           |      ~A  ~B             |             ~A  ~B
+# --------------------------|-------------------------|--------------------------------
+# A or else B, but not both |       A                 |              A  ~B
+#                           |           B             |             ~A   B
+# --------------------------|-------------------------|--------------------------------
+# A or B or both            |       A                 |              A  ~B
+#                           |           B             |             ~A   B
+#                           |       A   B             |              A   B
+# --------------------------|-------------------------|--------------------------------
+# If A then B               |       A   B             |              A   B
+#                           |        ...              |             ~A  ~B
+#                           |                         |             ~A   B
+# --------------------------|-------------------------|--------------------------------
+# If and only if A then B   |       A   B             |              A   B
+#                           |        ...              |             ~A  ~B
+
 """
 
 Addinf to models together happens in function of the upper level operator
@@ -68,12 +95,24 @@ negation of an atom and the negation of a subexpression.
 
 
 """
+
+
+class Insight(Enum):
+
+    """Enum for the diferent insight modes intuitive and full"""
+    INTUITIVE = 0
+    FULL = 1
+
+
+INTUITIVE_MODELS = []   # These are the models that are represented by "..." in the paper
+                        # and would be in the explicit model # noqa: E116
+
 #######################################################################
 #                Main Function `mental_model_builder`                 #
 #######################################################################
 
 
-def mental_model_builder(sympified_expr):
+def mental_model_builder(sympified_expr, mode=Insight.INTUITIVE):
     """
     Builds a mental model representation of the logical expression.
 
@@ -101,8 +140,33 @@ def mental_model_builder(sympified_expr):
                 Set of all the atoms in the logical expression
             expression.args
                 Tuple of arguments the outermost logical operator takes
+    mode: Insight
+        Insight can be either Insight.INTUITIVE or Insight.FULL
+        The mental models differ accordingly:
 
-    Returns
+            The sentence               The mental       The fully
+                                       models of its    explicit
+                                       possibilities    models
+            ==========================|==============|============
+            A And B                   |    A   B     |    A   B
+            --------------------------|--------------|------------
+            Neither A nor B           |   ~A  ~B     |   ~A  ~B
+            --------------------------|--------------|------------
+            A or else B, but not both |    A         |    A  ~B
+                                      |        B     |   ~A   B
+            --------------------------|--------------|------------
+            A or B or both            |    A         |    A  ~B
+                                      |        B     |   ~A   B
+                                      |    A   B     |    A   B
+            --------------------------|--------------|------------
+            If A then B               |    A   B     |    A   B
+                                      |     ...      |   ~A  ~B
+                                      |              |   ~A   B
+            --------------------------|--------------|------------
+            If and only if A then B   |    A   B     |    A   B
+                                      |     ...      |   ~A  ~B
+
+
     -------
     Mental model representation of logical expression
 
@@ -123,7 +187,7 @@ def map_instance_to_operation(el):
         (And, build_and),
         (Xor, build_xor),
         (Not, build_not),
-        (Implies, build_and),
+        (Implies, build_implication),
         (Equivalent, build_and),
         (Symbol, lambda *_: np.array([[1.]])),
     ))
@@ -278,6 +342,126 @@ def build_xor(exp, atom_index_mapping, exp_atoms):
         return np.unique(merged_sub_models, axis=0)
 
 
+def build_implication(exp, atom_index_mapping, exp_atoms, mode=Insight.INTUITIVE):
+    """
+    Builds numpy representation of implication
+
+    Behaves differently depending on if it is called with parameter Insight.Intuitive
+    or Insight.Full
+
+    "A -> B"
+    Should yield model
+    1 1     mode = INTUITIVE
+    ---
+    0 1     mode = FULL
+    0 0
+
+    Parameters
+    ----------
+    exp : symbolic expression
+        Expression with only symbols or symbols and logical arguments
+    atom_index_mapping :
+    exp_atoms : TODO
+    mode : TODO, optional
+
+    Returns
+    -------
+    TODO
+
+    """
+    assert(isinstance(exp, Implies))
+    assert len(exp.args) == 2
+
+    antecedent, consequent = exp.args
+
+    if all(isinstance(el, Symbol) for el in exp.args):
+        pos_valuations = [(1, 1), (0, 1), (0, 0)]
+        implication_model = np.zeros((len(pos_valuations), len(exp_atoms)))
+        implication_model[
+            :, list(map(lambda x: atom_index_mapping[x], [antecedent, consequent]))
+        ] = pos_valuations
+        return implication_model
+    else:
+        if not isinstance(antecedent, Symbol) and not isinstance(consequent, Symbol):
+            modelized_antecedent = map_instance_to_operation(antecedent)(antecedent, atom_index_mapping, exp_atoms)
+            modelized_consequent = map_instance_to_operation(consequent)(consequent, atom_index_mapping, exp_atoms)
+
+        elif not isinstance(consequent, Symbol):
+            modelized_antecedent = np.zeros((1, len(exp_atoms)))
+            modelized_antecedent[:, atom_index_mapping[antecedent]] = 1
+            modelized_consequent = map_instance_to_operation(consequent)(consequent, atom_index_mapping, exp_atoms)
+        else:
+            modelized_antecedent = map_instance_to_operation(antecedent)(antecedent, atom_index_mapping, exp_atoms)
+            modelized_consequent = np.zeros((1, len(exp_atoms)))
+            modelized_consequent[:, atom_index_mapping[consequent]] = 1
+
+        merged_sub_models = _merge_models(
+            modelized_antecedent, modelized_consequent, atom_index_mapping=atom_index_mapping,
+            exp_atoms=exp_atoms, op="implication")
+
+        return np.unique(merged_sub_models, axis=0)
+
+
+def build_equals(exp, atom_index_mapping, exp_atoms, mode=Insight.INTUITIVE):
+    """
+    Builds numpy representation of implication
+
+    Behaves differently depending on if it is called with parameter Insight.Intuitive
+    or Insight.Full
+
+    "A -> B"
+    Should yield model
+    1 1     mode = INTUITIVE
+    ---
+    0 1     mode = FULL
+    0 0
+
+    Parameters
+    ----------
+    exp : symbolic expression
+        Expression with only symbols or symbols and logical arguments
+    atom_index_mapping :
+    exp_atoms : TODO
+    mode : TODO, optional
+
+    Returns
+    -------
+    TODO
+
+    """
+    assert(isinstance(exp, Equivalent))
+    assert len(exp.args) == 2
+
+    antecedent, consequent = exp.args
+
+    if all(isinstance(el, Symbol) for el in exp.args):
+        pos_valuations = [(1, 1), (0, 0)]
+        bi_implication_model = np.zeros((len(pos_valuations), len(exp_atoms)))
+        bi_implication_model[
+            :, list(map(lambda x: atom_index_mapping[x], [antecedent, consequent]))
+        ] = pos_valuations
+        return bi_implication_model
+    else:
+        if not isinstance(antecedent, Symbol) and not isinstance(consequent, Symbol):
+            modelized_antecedent = map_instance_to_operation(antecedent)(antecedent, atom_index_mapping, exp_atoms)
+            modelized_consequent = map_instance_to_operation(consequent)(consequent, atom_index_mapping, exp_atoms)
+
+        elif not isinstance(consequent, Symbol):
+            modelized_antecedent = np.zeros((1, len(exp_atoms)))
+            modelized_antecedent[:, atom_index_mapping[antecedent]] = 1
+            modelized_consequent = map_instance_to_operation(consequent)(consequent, atom_index_mapping, exp_atoms)
+        else:
+            modelized_antecedent = map_instance_to_operation(antecedent)(antecedent, atom_index_mapping, exp_atoms)
+            modelized_consequent = np.zeros((1, len(exp_atoms)))
+            modelized_consequent[:, atom_index_mapping[consequent]] = 1
+
+        merged_sub_models = _merge_models(
+            modelized_antecedent, modelized_consequent, atom_index_mapping=atom_index_mapping,
+            exp_atoms=exp_atoms, op="Equivalent")
+
+        return np.unique(merged_sub_models, axis=0)
+
+
 def build_not(exp, atom_index_mapping, exp_atoms):
     """
     Builds model of expression with outer-most argument being Not
@@ -291,6 +475,8 @@ def build_not(exp, atom_index_mapping, exp_atoms):
         ] = -1.
         return not_model
     else:
+        # First build model of the model to be negated
+        # then get the complement of that model and return it
         model_positive = map_instance_to_operation(neg_arg)(neg_arg, atom_index_mapping, exp_atoms)
         neg_model = _complement_array_model(model_positive, atom_index_mapping, exp_atoms)
         return neg_model
@@ -307,16 +493,13 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
     Merges the different subexpressions together.
     Implements merging for operator `And`, `Or`, `Xor`
 
-
-
     Parameters
     ----------
     sub_models: List[np.ndarray]
         List of arbitrary number of sub_models subexpressions to be merged together
 
-    atom_index_mapping:
-
-
+    atom_index_mapping: Dict
+        Mapping of atom to its index in np.ndarray representation of a mental model
 
     Returns
     -------
@@ -327,6 +510,7 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
     assert(len(sub_models)) >= 2
 
     if op == "And":
+        print("Arguments for `And` merge: ")
         print(sub_models)
         iter_models = iter(sub_models)
         merged_models = next(iter_models)
@@ -368,6 +552,8 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
 
         merged_models[merged_models > 0] = 1
         merged_models[merged_models < 0] = -1
+        print("Merged `AND`: ")
+        print(merged_models)
         return merged_models
 
     if op == "Xor":
@@ -431,6 +617,63 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
         merged_models[merged_models < 0] = -1
         return merged_models
 
+    if op == "implication":
+        """ get 1 1
+                0 1
+                0 0 combination"""
+        antecedent, consequent = sub_models
+        complement_antecedent = _complement_array_model(antecedent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms)
+        print("complement_antecedent")
+        print(complement_antecedent)
+        complement_consequent = _complement_array_model(consequent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms)
+
+        print("complement_consequent")
+        print(complement_consequent)
+
+        merged_models = _merge_models(antecedent, consequent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms, op="And")
+        print("Combination 1 1")
+        print(merged_models)
+
+        comp_antecedent_consequent = _merge_models(complement_antecedent, consequent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms, op="And")
+        print("Combination 0 1")
+        print(comp_antecedent_consequent)
+
+        merged_models = np.vstack((merged_models, comp_antecedent_consequent))
+        comp_antecedent_comp_consequent = _merge_models(complement_antecedent, complement_consequent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms, op="And")
+        print("Combination 0 0")
+        print(comp_antecedent_comp_consequent)
+
+        merged_models = np.vstack((merged_models, comp_antecedent_comp_consequent))
+        print("Total merged `Implication` model: ")
+        print(merged_models)
+        return merged_models
+
+    if op == "Equivalent":
+        """ get 1 1
+                0 1
+                0 0 combination"""
+        antecedent, consequent = sub_models
+        complement_antecedent = _complement_array_model(antecedent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms)
+        print("complement_antecedent")
+        print(complement_antecedent)
+        complement_consequent = _complement_array_model(consequent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms)
+
+        print("complement_consequent")
+        print(complement_consequent)
+
+        merged_models = _merge_models(antecedent, consequent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms, op="And")
+        print("Combination 1 1")
+        print(merged_models)
+
+        comp_antecedent_comp_consequent = _merge_models(complement_antecedent, complement_consequent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms, op="And")
+        print("Combination 0 0")
+        print(comp_antecedent_comp_consequent)
+
+        merged_models = np.vstack((merged_models, comp_antecedent_comp_consequent))
+        print("Total merged `Implication` model: ")
+        print(merged_models)
+        return merged_models
+
 
 def _complement_array_model(model, atom_index_mapping, exp_atoms):
     model_arg_indices = [i for i, val in enumerate(model.any(axis=0)) if val]
@@ -453,7 +696,9 @@ def _increasing_ones_first_sort(array_slice):
     return array_slice.count(1), pos_of_ones
 
 
-# print(_merge_models(np.array([[1., 1., 0.]]), np.array([[0., 0., 0.], [0., 1., 0.], [0., 0., 1.]]), atom_index_mapping=None, exp_atoms=None, op="And"))
+# TODO Write tests for each function to fix status quo and check with lisp implementation if all the results coincide
+print(_merge_models(np.array([[1., 1., 0.]]), np.array([[0., 0., 0.], [0., 1., 0.], [0., 0., 1.]]), atom_index_mapping=None, exp_atoms=None, op="And"))
 A, B, C = symbols("A B C")
-print(mental_model_builder(Not(A) | (A & B)))
+# print(mental_model_builder(A | ~B))
+print(mental_model_builder(A >> (A & C)))
 # print(_complement_array_model(np.array([[-1., 0.]]), [], exp_atoms=(A, B)))
