@@ -48,3 +48,7 @@ def sympify_formatter(args, rules):
         return "{operator}({f_args})".format(operator=op,
                                              f_args=", ".join(arguments))
 
+
+def parse_format(expression, mode):
+    parsed_expression = parse_expr(expression)
+    return sympify_formatter(parsed_expression, mode)
