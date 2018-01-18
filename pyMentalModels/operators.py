@@ -26,5 +26,5 @@ intuit_op = {
     '&': "And",
     '->': "And",
     '<->': "And",
-    '^': "MulXor",
+    '^': "Xor",
 }

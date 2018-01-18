@@ -5,8 +5,8 @@ import numpy as np
 from itertools import product, combinations
 from sympy.logic.boolalg import (And, Or, Xor, Not, Implies, Equivalent)
 from sympy.core.symbol import Symbol
-from sympy import symbols
 from enum import Enum
+import logging
 
 #######################################################################
 #                            Notes to self                            #
@@ -104,9 +104,6 @@ class Insight(Enum):
     FULL = 1
 
 
-INTUITIVE_MODELS = []   # These are the models that are represented by "..." in the paper
-                        # and would be in the explicit model # noqa: E116
-
 #######################################################################
 #                Main Function `mental_model_builder`                 #
 #######################################################################
@@ -172,12 +169,12 @@ def mental_model_builder(sympified_expr, mode=Insight.INTUITIVE):
 
     """
     # Extract atoms from sympified expression
-    exp_atoms = sympified_expr.atoms()
+    exp_atoms = sorted(sympified_expr.atoms(), key=str)
 
     # map every atom to its corresponding index in the model
-    atom_index_mapping = {atom: i for i, atom in enumerate(sorted(exp_atoms, key=str))}
+    atom_index_mapping = {atom: i for i, atom in enumerate(exp_atoms)}
 
-    return map_instance_to_operation(sympified_expr)(sympified_expr, atom_index_mapping, exp_atoms)
+    return sympified_expr, map_instance_to_operation(sympified_expr)(sympified_expr, atom_index_mapping, exp_atoms), exp_atoms, atom_index_mapping
 
 
 def map_instance_to_operation(el):
@@ -466,8 +463,8 @@ def build_not(exp, atom_index_mapping, exp_atoms):
     """
     Builds model of expression with outer-most argument being Not
     """
-    neg_arg = exp.args[0]
     assert isinstance(exp, Not)
+    neg_arg = exp.args[0]
     if isinstance(neg_arg, Symbol):
         not_model = np.zeros([1, len(exp_atoms)])
         not_model[
@@ -509,11 +506,14 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
     """
     assert(len(sub_models)) >= 2
 
+    sub_models = tuple(np.atleast_2d(model) for model in sub_models)
+
     if op == "And":
-        print("Arguments for `And` merge: ")
-        print(sub_models)
+        logging.debug("Arguments for `And` merge: ")
+        logging.debug(sub_models)
         iter_models = iter(sub_models)
         merged_models = next(iter_models)
+        print("Merged model", merged_models)
         for model in iter_models:
             """ pre-process every submodel so that the combinations are allowed
                 only compare relevant indices,
@@ -526,14 +526,17 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
 
             # single out the overlapping atoms in both models (i.e. (A B) & (B C) -> B)
             atom_indices_to_check = list(merged_model_active_indices & model_active_indices)
+            logging.debug("Atoms in both models: {}".format(list(map(lambda x: exp_atoms[x], atom_indices_to_check))))
 
             if atom_indices_to_check:  # if there are overlapping indices for both models
                 sub_models_merged_model = []
                 for submodel in merged_models:
+                    print(merged_models, submodel)
                     allowed_models = model[
                         submodel[atom_indices_to_check] == model[:, atom_indices_to_check].flatten(),
                         :
                     ]  # this returns the models that are compatible with the preexisiting merged_model
+                    logging.debug(allowed_models)
                     if not allowed_models.size:
                         continue
                     reshaped_submodel = np.repeat(submodel, len(allowed_models), axis=0)
@@ -552,8 +555,8 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
 
         merged_models[merged_models > 0] = 1
         merged_models[merged_models < 0] = -1
-        print("Merged `AND`: ")
-        print(merged_models)
+        logging.debug("Merged `AND`: ")
+        logging.debug(merged_models)
         return merged_models
 
     if op == "Xor":
@@ -572,7 +575,7 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
             i.e. Model1 & ~Model2
                 ~Model1 &  Model2
         """
-        print(sub_models)
+        logging.debug(sub_models)
         negated_models = [
             _complement_array_model(model, atom_index_mapping, exp_atoms)
             for model in sub_models
@@ -623,29 +626,29 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
                 0 0 combination"""
         antecedent, consequent = sub_models
         complement_antecedent = _complement_array_model(antecedent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms)
-        print("complement_antecedent")
-        print(complement_antecedent)
+        logging.debug("complement_antecedent")
+        logging.debug(complement_antecedent)
         complement_consequent = _complement_array_model(consequent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms)
 
-        print("complement_consequent")
-        print(complement_consequent)
+        logging.debug("complement_consequent")
+        logging.debug(complement_consequent)
 
         merged_models = _merge_models(antecedent, consequent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms, op="And")
-        print("Combination 1 1")
-        print(merged_models)
+        logging.debug("Combination 1 1")
+        logging.debug(merged_models)
 
         comp_antecedent_consequent = _merge_models(complement_antecedent, consequent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms, op="And")
-        print("Combination 0 1")
-        print(comp_antecedent_consequent)
+        logging.debug("Combination 0 1")
+        logging.debug(comp_antecedent_consequent)
 
         merged_models = np.vstack((merged_models, comp_antecedent_consequent))
         comp_antecedent_comp_consequent = _merge_models(complement_antecedent, complement_consequent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms, op="And")
-        print("Combination 0 0")
-        print(comp_antecedent_comp_consequent)
+        logging.debug("Combination 0 0")
+        logging.debug(comp_antecedent_comp_consequent)
 
         merged_models = np.vstack((merged_models, comp_antecedent_comp_consequent))
-        print("Total merged `Implication` model: ")
-        print(merged_models)
+        logging.debug("Total merged `Implication` model: ")
+        logging.debug(merged_models)
         return merged_models
 
     if op == "Equivalent":
@@ -654,24 +657,24 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
                 0 0 combination"""
         antecedent, consequent = sub_models
         complement_antecedent = _complement_array_model(antecedent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms)
-        print("complement_antecedent")
-        print(complement_antecedent)
+        logging.debug("complement_antecedent")
+        logging.debug(complement_antecedent)
         complement_consequent = _complement_array_model(consequent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms)
 
-        print("complement_consequent")
-        print(complement_consequent)
+        logging.debug("complement_consequent")
+        logging.debug(complement_consequent)
 
         merged_models = _merge_models(antecedent, consequent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms, op="And")
-        print("Combination 1 1")
-        print(merged_models)
+        logging.debug("Combination 1 1")
+        logging.debug(merged_models)
 
         comp_antecedent_comp_consequent = _merge_models(complement_antecedent, complement_consequent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms, op="And")
-        print("Combination 0 0")
-        print(comp_antecedent_comp_consequent)
+        logging.debug("Combination 0 0")
+        logging.debug(comp_antecedent_comp_consequent)
 
         merged_models = np.vstack((merged_models, comp_antecedent_comp_consequent))
-        print("Total merged `Implication` model: ")
-        print(merged_models)
+        logging.debug("Total merged `Implication` model: ")
+        logging.debug(merged_models)
         return merged_models
 
 
@@ -694,11 +697,3 @@ def _increasing_ones_first_sort(array_slice):
     """ Helper function to sort models by atom"""
     pos_of_ones = [-array_slice[i] for i, _ in enumerate(array_slice)]
     return array_slice.count(1), pos_of_ones
-
-
-# TODO Write tests for each function to fix status quo and check with lisp implementation if all the results coincide
-print(_merge_models(np.array([[1., 1., 0.]]), np.array([[0., 0., 0.], [0., 1., 0.], [0., 0., 1.]]), atom_index_mapping=None, exp_atoms=None, op="And"))
-A, B, C = symbols("A B C")
-# print(mental_model_builder(A | ~B))
-print(mental_model_builder(A >> (A & C)))
-# print(_complement_array_model(np.array([[-1., 0.]]), [], exp_atoms=(A, B)))

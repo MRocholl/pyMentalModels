@@ -2,14 +2,16 @@
 # -*- coding: iso-8859-15 -*-
 import unittest
 
-import pyMentalModels.logical_connectives.operators as op
-import pyMentalModels.parsing.modal_parser as mp
-import pyMentalModels.reasoner.numpy_reasoner as nr
-from sympy import sympify
+from pyMentalModels.operators import intuit_op, explicit_op
+from pyMentalModels.modal_parser import parse_format
+from pyMentalModels.numpy_reasoner import mental_model_builder, _merge_models
 
 """ Modal logical stuff and stuff regarding sympy.truthtable solution"""
 
 
+def _eval_expr(expr, mode):
+    op = intuit_op if mode == "intuitive" else explicit_op
+    return mental_model_builder(parse_format(expr, op=op))
 
 class TestLispCases(unittest.TestCase):
     def test_basic_cases(self):
@@ -371,4 +373,4 @@ class TestLispCases(unittest.TestCase):
             A    B {T41 (((- A)))}
         Number of models constructed equals 11
         """
-        assert _eval_premise("A & ~A") == []
+        assert parse_format("A & ~A") == []
