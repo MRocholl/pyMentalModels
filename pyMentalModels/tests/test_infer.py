@@ -7,15 +7,14 @@ from pyMentalModels.infer import infer
 
 from sympy import symbols
 from sympy.logic.boolalg import And, Or, Xor, Implies, Equivalent, Not
-
+import numpy.testing as npt
+import numpy as np
 
 def test_infer():
     A, B, C = symbols("A B C")
 
 def test_premise_parirings():
-    assert
-
-
+    npt.assert_array_equal(mental_model_builder("A & ~A"), np.array([[]]))
 
     test_premise_pairings = [
         ["A & ~A"],                              # 1 above
@@ -43,3 +42,4 @@ def test_premise_parirings():
         ["A ^ B", "A | B"],                      # 23 [consistent]
         ["A | B", "A ^ B"],                      # 24 [consistent] probability of 2/3
     ]
+

@@ -22,6 +22,7 @@ def main(args):
         parse_format(expr, mode=mode)
         for expr in expressions_to_parse
     ]
+    print(sympified_expressions)
 
     mental_model = namedtuple("mental_model", ["expr", "model", "atoms_model", "atom_index_mapping"])
 
@@ -34,7 +35,6 @@ def main(args):
         for possible_world in model.model:
             print(pretty_print_atom_assign(model.atoms_model, possible_world, args.mode))
 
-    # infer(models)
 
 
 if __name__ == "__main__":

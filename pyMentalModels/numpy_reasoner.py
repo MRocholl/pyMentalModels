@@ -321,9 +321,11 @@ def build_xor(exp, atom_index_mapping, exp_atoms):
 
     if all(isinstance(el, Symbol) for el in exp.args):
         xor_model = np.zeros((nr_xor_args, len(exp_atoms)))
+        all_combinations = np.eye(nr_xor_args)
+        all_combinations[np.where(all_combinations != 1)] = -1
         xor_model[
             :, list(map(lambda x: atom_index_mapping[x], xor_args))
-        ] = np.eye(nr_xor_args)
+        ] = all_combinations
         return xor_model
     else:
         symbol_list = []
@@ -340,9 +342,11 @@ def build_xor(exp, atom_index_mapping, exp_atoms):
 
         if symbol_list:
             xor_model = np.zeros((len(symbol_list), len(exp_atoms)))
+            all_combinations = np.eye(len(symbol_list))
+            all_combinations[np.where(all_combinations != 1)] = -1
             xor_model[
                 :, list(map(lambda x: atom_index_mapping[x], symbol_list))
-            ] = np.eye(len(symbol_list))
+            ] = all_combinations
             modelized_subexpressions.append(xor_model)
 
         # Create `xor` model for the symbols

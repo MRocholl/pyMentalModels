@@ -24,7 +24,7 @@ def pretty_print_atom_assign(atoms, atom_assignment, mode="intuitive", output="s
     assert output in ("list", "str"), "Provided invalid argument for `mode`"
 
     if mode == "intuitive":
-        list_repr = [" {}".format(atom) if value == 1 else "¬{}".format(atom) if value == -1 else "  " for atom, value in zip(atoms, atom_assignment)]
+        list_repr = [" {}".format(atom) if value == 1 else "¬{}".format(atom) if value == -2 else "  " for atom, value in zip(atoms, atom_assignment)]
     else:
         list_repr = [" {}".format(atom) if value == 1 else "¬{}".format(atom) for atom, value in zip(atoms, atom_assignment)]
 
