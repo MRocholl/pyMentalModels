@@ -10,6 +10,7 @@ import logging
 
 from sympy import symbols
 
+
 #######################################################################
 #                            Notes to self                            #
 #######################################################################
@@ -104,6 +105,13 @@ class Insight(Enum):
     """Enum for the diferent insight modes intuitive and full"""
     INTUITIVE = 0
     FULL = 1
+
+
+
+POS_VAL = 1
+IMPL_NEG = -1
+EXPL_NEG = -2
+
 
 
 #######################################################################
@@ -225,7 +233,7 @@ def build_or(exp, atom_index_mapping, exp_atoms):
     nr_args = len(or_args)
 
     if all(isinstance(el, Symbol) for el in exp.args):
-        pos_valuations = [x for x in product(range(2), repeat=nr_args)][1:]
+        pos_valuations = [x for x in product([IMPL_NEG, POS_VAL], repeat=nr_args)][1:]
         pos_valuations = sorted(pos_valuations, key=_increasing_ones_first_sort)
         or_model = np.zeros((len(pos_valuations), len(exp_atoms)))
         or_model[
@@ -249,7 +257,7 @@ def build_or(exp, atom_index_mapping, exp_atoms):
 
         # Create `or` model for the symbols
         if symbol_list:
-            pos_valuations = [x for x in product(range(2), repeat=len(symbol_list))][1:]
+            pos_valuations = [x for x in product([IMPL_NEG, POS_VAL], repeat=len(symbol_list))][1:]
             pos_valuations = sorted(pos_valuations, key=_increasing_ones_first_sort)
             or_model = np.zeros((len(pos_valuations), len(exp_atoms)))
             or_model[
@@ -297,7 +305,10 @@ def build_and(exp, atom_index_mapping, exp_atoms):
 
         # merge the generated submodels to an overall model of `And`
         merged_sub_models = _merge_models(*modelized_subexpressions, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms, op="And")
-        return np.unique(merged_sub_models, axis=0)
+        if merged_sub_models.size:
+            return np.unique(merged_sub_models, axis=0)
+        else:
+            return merged_sub_models
 
 
 def build_xor(exp, atom_index_mapping, exp_atoms):
@@ -374,7 +385,7 @@ def build_implication(exp, atom_index_mapping, exp_atoms, mode=Insight.INTUITIVE
     antecedent, consequent = exp.args
 
     if all(isinstance(el, Symbol) for el in exp.args):
-        pos_valuations = [(1, 1), (0, 1), (0, 0)]
+        pos_valuations = [(POS_VAL, POS_VAL), (IMPL_NEG, POS_VAL), (IMPL_NEG, IMPL_NEG)]
         implication_model = np.zeros((len(pos_valuations), len(exp_atoms)))
         implication_model[
             :, list(map(lambda x: atom_index_mapping[x], [antecedent, consequent]))
@@ -514,50 +525,15 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
         logging.debug("Arguments for `And` merge: ")
         logging.debug(sub_models)
 
-        def active_indices(model1, model2):
-            value_pairs = zip(model1.any(axis=0), model2.any(axis=0))
-            return [
-                index for index, (val1, val2) in enumerate(value_pairs)
-                if val1 and val2
-            ]
-
-        # all_indices = [active_indices(*combination) for combination in combinations(sub_models, 2)]
-
-        for model1, model2 in combinations(sub_models, 2):
-
-            active_ind = active_indices(model1, model2)
-            if active_ind:
-                sub_models_merged_model = []
-                # get valid rows
-                for sub_model in model1:
-                    model2_valid_models = model2[sub_model[active_ind] == model2[:, active_ind].flatten(), :]
-                    print("valid model", model2_valid_models)
-                    if not model2_valid_models.size:
-                        continue
-                    reshaped_submodel = np.repeat(sub_model, len(model2_valid_models), axis=0)
-                    submodel_added_with_allowed_models = reshaped_submodel + model2_valid_models
-                    sub_models_merged_model.append(submodel_added_with_allowed_models)
-                if sub_models_merged_model:
-                    iter_models = iter(sub_models_merged_model)
-                    merged_sub_models = next(iter_models)
-                    for sub_model in iter_models:
-                        merged_sub_models = np.vstack((merged_sub_models, sub_model))
-                    merged_models = np.vstack((merged_models, merged_sub_models))
-            else:
-                reshaped_merged_models = np.repeat(model1, len(model2), axis=0)
-                reshaped_model2 = np.tile(model2, (len(model1), 1))
-                merged_models = reshaped_merged_models + reshaped_model2
-
-
-
         iter_models = iter(sub_models)
         merged_models = next(iter_models)
-        print("Merged model", merged_models)
         for model in iter_models:
-            """ pre-process every submodel so that the combinations are allowed
+            """
+            pre-process every submodel so that the combinations are allowed
                 only compare relevant indices,
              i.e. (A & B) | (B & C)
                   1  1  0   0  1  1
+
             """
             # Gather indices of atoms that are active in the models
             merged_model_active_indices = {i for i, val in enumerate(merged_models.any(axis=0)) if val}
@@ -570,27 +546,40 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
             if atom_indices_to_check:  # if there are overlapping indices for both models
                 sub_models_merged_model = []
                 for submodel in merged_models:
-                    print(merged_models, submodel)
                     allowed_models = model[submodel[atom_indices_to_check] == model[:, atom_indices_to_check].flatten(), :]  # this returns the models that are compatible with the preexisiting merged_model
-                    logging.debug(allowed_models)
+                    logging.debug("Allowed models are: {}".format(allowed_models))
                     if not allowed_models.size:
                         continue
                     reshaped_submodel = np.repeat(submodel, len(allowed_models), axis=0)
+                    print("Reshaped submodel:", reshaped_submodel)
                     submodel_added_with_allowed_models = reshaped_submodel + allowed_models
+                    submodel_added_with_allowed_models[submodel_added_with_allowed_models == 2 * EXPL_NEG] = EXPL_NEG
+                    submodel_added_with_allowed_models[submodel_added_with_allowed_models == 2 * IMPL_NEG] = IMPL_NEG
+                    submodel_added_with_allowed_models[submodel_added_with_allowed_models == 2 * POS_VAL] = POS_VAL
+                    print("added submodel with allowed model", submodel_added_with_allowed_models)
                     sub_models_merged_model.append(submodel_added_with_allowed_models)
+                    print("List of valid submodels until now:", sub_models_merged_model)
+
+                # finished iterating through all submodels
+                # has collected all valid combinations of both the models
+                # if there are still no combinations of any submodel with the other model
+                # return the empty array
                 if sub_models_merged_model:
                     iter_models = iter(sub_models_merged_model)
-                    merged_sub_models = next(iter_models)
+                    merged_models = next(iter_models)
                     for sub_model in iter_models:
-                        merged_sub_models = np.vstack((merged_sub_models, sub_model))
-                    merged_models = np.vstack((merged_models, merged_sub_models))
+                        merged_models = np.vstack((merged_models, sub_model))
+                else:
+                    print("AND yields the empty array")
+                    return np.array([[]])
             else:
                 reshaped_merged_models = np.repeat(merged_models, len(model), axis=0)
                 reshaped_model2 = np.tile(model, (len(merged_models), 1))
                 merged_models = reshaped_merged_models + reshaped_model2
+                merged_models[merged_models == 2 * EXPL_NEG] = EXPL_NEG
+                merged_models[merged_models == 2 * IMPL_NEG] = IMPL_NEG
+                merged_models[merged_models == 2 * POS_VAL] = POS_VAL
 
-        merged_models[merged_models > 0] = 1
-        merged_models[merged_models < 0] = -1
         logging.debug("Merged `AND`: ")
         logging.debug(merged_models)
         return merged_models
@@ -717,7 +706,7 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
 def _complement_array_model(model, atom_index_mapping, exp_atoms):
     model_arg_indices = [i for i, val in enumerate(model.any(axis=0)) if val]
     nr_args = len(model_arg_indices)
-    all_combinations = [list(el) for el in product(range(2), repeat=nr_args)]
+    all_combinations = [list(el) for el in product([IMPL_NEG, POS_VAL], repeat=nr_args)]
     # generate all combinations
     model_copy = model.copy()
     all_possible_models = np.zeros((len(all_combinations), len(exp_atoms)))
@@ -733,14 +722,3 @@ def _increasing_ones_first_sort(array_slice):
     """ Helper function to sort models by atom"""
     pos_of_ones = [-array_slice[i] for i, _ in enumerate(array_slice)]
     return array_slice.count(1), pos_of_ones
-
-
-A, B, C = symbols("A B C")
-atom_index_mapping = {A: 0, B: 1, C: 2}
-print(_merge_models(
-            np.array([[0., 0., 0.], [0., 1., 0.], [0., 0., 1.]]),
-            np.array([[1., 1., 0.]]),
-            atom_index_mapping=atom_index_mapping,
-            exp_atoms=sorted(atom_index_mapping.keys(), key=str),
-            op="And"))
-

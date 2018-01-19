@@ -34,7 +34,7 @@ def main(args):
         for possible_world in model.model:
             print(pretty_print_atom_assign(model.atoms_model, possible_world, args.mode))
 
-    infer(models)
+    # infer(models)
 
 
 if __name__ == "__main__":

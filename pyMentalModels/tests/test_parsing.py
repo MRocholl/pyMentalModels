@@ -4,8 +4,8 @@
 import unittest
 
 # Package related imports
-from pyMentalModels.parsing.modal_parser import parse_expr, sympify_formatter
-from pyMentalModels.logical_connectives.operators import explicit_op, intuit_op
+from pyMentalModels.modal_parser import parse_expr, sympify_formatter
+from pyMentalModels.operators import explicit_op, intuit_op
 
 
 expressions = [

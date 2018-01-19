@@ -43,7 +43,7 @@ def infer(models: List, task="infer"):
         print(pairing)
         possible_model = _merge_models(*pairing, atom_index_mapping=atom_index_mapping_all, exp_atoms=all_atoms_in_all_models, op="And")
         print("possible model is", possible_model)
-        return
+        continue
         if possible_model:
             print("Given the models: {}".format(" ".join(pairing)))
             print("The following model is possible: {}".format(possible_model))
