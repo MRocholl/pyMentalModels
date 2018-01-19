@@ -189,6 +189,7 @@ def mental_model_builder(sympified_expr, mode=Insight.INTUITIVE):
 
 def map_instance_to_operation(el):
     "maps every logical instance to its builder function."
+    print(el)
     maps = iter((
         (Or, build_or),
         (And, build_and),
@@ -196,7 +197,7 @@ def map_instance_to_operation(el):
         (Not, build_not),
         (Implies, build_implication),
         (Equivalent, build_and),
-        (Symbol, lambda *_: np.array([[1.]])),
+        (Symbol, lambda *_: np.array([[POS_VAL]])),
     ))
     try:
         return next(builder for type_, builder in maps if isinstance(el, type_))
@@ -332,7 +333,6 @@ def build_xor(exp, atom_index_mapping, exp_atoms):
                 symbol_list.append(el)
             else:
                 subexpression_list.append(el)
-
         modelized_subexpressions = [
             map_instance_to_operation(subexpression)(subexpression, atom_index_mapping, exp_atoms)
             for subexpression in subexpression_list
@@ -551,14 +551,14 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
                     if not allowed_models.size:
                         continue
                     reshaped_submodel = np.repeat(submodel, len(allowed_models), axis=0)
-                    print("Reshaped submodel:", reshaped_submodel)
+                    logging.debug("Reshaped submodel:", reshaped_submodel)
                     submodel_added_with_allowed_models = reshaped_submodel + allowed_models
                     submodel_added_with_allowed_models[submodel_added_with_allowed_models == 2 * EXPL_NEG] = EXPL_NEG
                     submodel_added_with_allowed_models[submodel_added_with_allowed_models == 2 * IMPL_NEG] = IMPL_NEG
                     submodel_added_with_allowed_models[submodel_added_with_allowed_models == 2 * POS_VAL] = POS_VAL
-                    print("added submodel with allowed model", submodel_added_with_allowed_models)
+                    logging.debug("added submodel with allowed model", submodel_added_with_allowed_models)
                     sub_models_merged_model.append(submodel_added_with_allowed_models)
-                    print("List of valid submodels until now:", sub_models_merged_model)
+                    logging.debug("List of valid submodels until now:", sub_models_merged_model)
 
                 # finished iterating through all submodels
                 # has collected all valid combinations of both the models
