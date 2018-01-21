@@ -107,7 +107,7 @@ class Insight(Enum):
     FULL = 1
 
 
-
+""" WARNING the merge and function is highly dependend on the choice of POS_VAL IMPL_NEG and EXPL_NEG"""
 POS_VAL = 1
 IMPL_NEG = -1
 EXPL_NEG = -2
@@ -322,7 +322,7 @@ def build_xor(exp, atom_index_mapping, exp_atoms):
     if all(isinstance(el, Symbol) for el in exp.args):
         xor_model = np.zeros((nr_xor_args, len(exp_atoms)))
         all_combinations = np.eye(nr_xor_args)
-        all_combinations[np.where(all_combinations != 1)] = -1
+        all_combinations[np.where(all_combinations != POS_VAL)] = IMPL_NEG
         xor_model[
             :, list(map(lambda x: atom_index_mapping[x], xor_args))
         ] = all_combinations
@@ -343,7 +343,7 @@ def build_xor(exp, atom_index_mapping, exp_atoms):
         if symbol_list:
             xor_model = np.zeros((len(symbol_list), len(exp_atoms)))
             all_combinations = np.eye(len(symbol_list))
-            all_combinations[np.where(all_combinations != 1)] = -1
+            all_combinations[np.where(all_combinations != POS_VAL)] = IMPL_NEG
             xor_model[
                 :, list(map(lambda x: atom_index_mapping[x], symbol_list))
             ] = all_combinations
@@ -486,7 +486,7 @@ def build_not(exp, atom_index_mapping, exp_atoms):
         not_model = np.zeros([1, len(exp_atoms)])
         not_model[
             0, atom_index_mapping[neg_arg]
-        ] = -1.
+        ] = EXPL_NEG
         return not_model
     else:
         # First build model of the model to be negated
@@ -549,17 +549,27 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
 
             if atom_indices_to_check:  # if there are overlapping indices for both models
                 sub_models_merged_model = []
+
+                def same_val(val1, val2):
+                    return (val1 == POS_VAL and val2 == POS_VAL) \
+                        or (val1 in (IMPL_NEG, EXPL_NEG) and val2 in (IMPL_NEG, EXPL_NEG))
                 for submodel in merged_models:
-                    allowed_models = model[submodel[atom_indices_to_check] == model[:, atom_indices_to_check].flatten(), :]  # this returns the models that are compatible with the preexisiting merged_model
+                    allowed_models = []
+                    for sub_model_to_check in model:
+                        if all(same_val(*vals) for vals in zip(submodel[atom_indices_to_check], sub_model_to_check[atom_indices_to_check])):
+                            allowed_models.append(sub_model_to_check)
                     logging.debug("Allowed models are: {}".format(allowed_models))
-                    if not allowed_models.size:
+                    if not allowed_models:
                         continue
                     reshaped_submodel = np.repeat(submodel, len(allowed_models), axis=0)
                     logging.debug("Reshaped submodel:", reshaped_submodel)
                     submodel_added_with_allowed_models = reshaped_submodel + allowed_models
-                    submodel_added_with_allowed_models[submodel_added_with_allowed_models == 2 * EXPL_NEG] = EXPL_NEG
-                    submodel_added_with_allowed_models[submodel_added_with_allowed_models == 2 * IMPL_NEG] = IMPL_NEG
-                    submodel_added_with_allowed_models[submodel_added_with_allowed_models == 2 * POS_VAL] = POS_VAL
+                    # after adding values can either be 2, -2 , -3 or -4 for the indexes that are active in both models
+                    # for the other indices values are 0, -1, -2 or 1
+                    # for the active indices map 2, -2, -3 and -4 to 1, -1, -2
+                    print("before", submodel_added_with_allowed_models)
+                    submodel_added_with_allowed_models[:, atom_indices_to_check] //= 2
+                    print("after", submodel_added_with_allowed_models)
                     logging.debug("added submodel with allowed model", submodel_added_with_allowed_models)
                     sub_models_merged_model.append(submodel_added_with_allowed_models)
                     logging.debug("List of valid submodels until now:", sub_models_merged_model)
@@ -580,9 +590,6 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
                 reshaped_merged_models = np.repeat(merged_models, len(model), axis=0)
                 reshaped_model2 = np.tile(model, (len(merged_models), 1))
                 merged_models = reshaped_merged_models + reshaped_model2
-                merged_models[merged_models == 2 * EXPL_NEG] = EXPL_NEG
-                merged_models[merged_models == 2 * IMPL_NEG] = IMPL_NEG
-                merged_models[merged_models == 2 * POS_VAL] = POS_VAL
 
         logging.debug("Merged `AND`: ")
         logging.debug(merged_models)
@@ -624,8 +631,6 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
         merged_models = next(iter_models)
         for model in iter_models:
             merged_models = np.vstack((merged_models, model))
-        merged_models[merged_models > 0] = 1
-        merged_models[merged_models < 0] = -1
         return merged_models
 
     if op == "Or":

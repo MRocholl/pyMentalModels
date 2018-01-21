@@ -30,10 +30,13 @@ def main(args):
     for sympified_expression in sympified_expressions:
         print("The expression to be evaluated is: {}".format(sympified_expression))
         model = mental_model(*mental_model_builder(sympified_expression))
+        print(model)
         models.append(model)
         print("The mental model that has been created is:")
         for possible_world in model.model:
             print(pretty_print_atom_assign(model.atoms_model, possible_world, args.mode))
+
+        infer
 
 
 
