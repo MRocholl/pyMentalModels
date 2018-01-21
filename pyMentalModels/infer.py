@@ -37,13 +37,17 @@ def infer(models: List, task="infer"):
         resized_mental_model[:, list(map(lambda atom: atom_index_mapping_all[atom], mental_model.atoms_model))] = mental_model.model
         logging.debug(resized_mental_model)
         resized_mental_models.append(resized_mental_model)
+    for i, mod in enumerate(resized_mental_models):
+        print("The {}th model is: {}".format(i, mod))
 
+
+    possible_models = []
     pairings_of_models = list(product(*resized_mental_models))
     for pairing in pairings_of_models:
-        print(pairing)
         possible_model = _merge_models(*pairing, atom_index_mapping=atom_index_mapping_all, exp_atoms=all_atoms_in_all_models, op="And")
-        print("possible model is", possible_model)
-        continue
-        if possible_model:
-            print("Given the models: {}".format(" ".join(pairing)))
-            print("The following model is possible: {}".format(possible_model))
+        if possible_model.size:
+            possible_models.append(possible_model)
+            logging.info("Given the models: {}".format(pairing))
+            logging.info("The following model is possible: {}".format(possible_model))
+    possible_models = np.vstack((possible_models))
+    return None, possible_models, all_atoms_in_all_models, atom_index_mapping_all

@@ -567,9 +567,7 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
                     # after adding values can either be 2, -2 , -3 or -4 for the indexes that are active in both models
                     # for the other indices values are 0, -1, -2 or 1
                     # for the active indices map 2, -2, -3 and -4 to 1, -1, -2
-                    print("before", submodel_added_with_allowed_models)
                     submodel_added_with_allowed_models[:, atom_indices_to_check] //= 2
-                    print("after", submodel_added_with_allowed_models)
                     logging.debug("added submodel with allowed model", submodel_added_with_allowed_models)
                     sub_models_merged_model.append(submodel_added_with_allowed_models)
                     logging.debug("List of valid submodels until now:", sub_models_merged_model)
