@@ -14,19 +14,21 @@ LINUX instructions
 Requirements are PYTHON 3(any) and sympy library.
 Set up a python virtualenv:
 
-`$ virtualenv .env`
+```
+$ virtualenv .env
+```
 
 source it:
 
-`$ source .env/bin/activate`
+```
+$ source .env/bin/activate
+```
 
 and run:
-`$ pip install -r requirements.txt`
 
-alternatively run:
-
-pip install git+https://github.com/MRocholl/pyMentalModels.git
-
+```
+$ pip install git+https://github.com/MRocholl/pyMentalModels.git
+```
 
 WINDOWS instructions
 --------------------
@@ -46,5 +48,6 @@ How To run the script
 A command line interface is provided.
 Run the script with 
 
-`$ python3 interface.py --help`
-
+```
+$ mental-models
+```
