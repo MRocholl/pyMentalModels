@@ -6,7 +6,6 @@ from pyMentalModels.operators import intuit_op, explicit_op
 from pyMentalModels.numpy_reasoner import mental_model_builder
 from pyMentalModels.pretty_printing import pretty_print_atom_assign
 from pyMentalModels.infer import infer
-from collections import namedtuple
 
 
 import argparse
@@ -24,20 +23,23 @@ def main(args):
     ]
     print(sympified_expressions)
 
-    mental_model = namedtuple("mental_model", ["expr", "model", "atoms_model", "atom_index_mapping"])
-
     models = []
     for sympified_expression in sympified_expressions:
         print("The expression to be evaluated is: {}".format(sympified_expression))
-        model = mental_model(*mental_model_builder(sympified_expression))
+        model = mental_model_builder(sympified_expression)
         print(model)
         models.append(model)
         print("The mental model that has been created is:")
         for possible_world in model.model:
             print(pretty_print_atom_assign(model.atoms_model, possible_world, args.mode))
 
-        infer
-
+    if len(models) <= 1:
+        return "Nothing to infer"
+    result = infer(models)
+    if not result:
+        print("The result is the empty model", result.model)
+    for possible_world in result.model:
+            print(pretty_print_atom_assign(result.atoms_model, possible_world, args.mode))
 
 
 if __name__ == "__main__":

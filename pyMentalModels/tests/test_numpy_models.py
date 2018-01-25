@@ -7,7 +7,7 @@ import numpy.testing as npt
 
 from sympy import symbols
 from sympy.logic.boolalg import And, Or, Xor, Implies, Equivalent, Not
-from pyMentalModels.numpy_reasoner import mental_model_builder
+from pyMentalModels.numpy_reasoner import mental_model_builder, POS_VAL, EXPL_NEG, IMPL_NEG
 
 
 class NotSureThisIsRightError(NotImplementedError):
@@ -17,135 +17,132 @@ class NotSureThisIsRightError(NotImplementedError):
 class TestNumpySimpleModels(unittest.TestCase):
     """ Class that tests behavior of all numpy model constructors of the logical operators
     """
-    alpha_symbols = symbols("A B C D E F G")  # defining symbols
+    alpha_symbols = symbols("a b c d e f g")  # defining symbols
 
     def test_and(self):
         A, B = self.alpha_symbols[:2]
         expr = And(A, B)
         model = mental_model_builder(expr)
-        npt.assert_allclose(model, np.array([[1., 1.]]))
+        npt.assert_allclose(model.model, np.array([[POS_VAL, POS_VAL]]))
 
     def test_or(self):
         A, B = self.alpha_symbols[:2]
         expr = Or(A, B)
         model = mental_model_builder(expr)
         npt.assert_allclose(
-            model, np.array([[1., 0.],
-                             [0., 1.],
-                             [1., 1.]]))
+            model.model, np.array([[POS_VAL, IMPL_NEG],
+                             [IMPL_NEG, POS_VAL],
+                             [POS_VAL, POS_VAL]]))
 
     def test_A_or_A(self):
         A, B = self.alpha_symbols[:2]
         expr = Or(A, A)
         model = mental_model_builder(expr)
-        npt.assert_allclose(model, np.array([[1.]]))
+        npt.assert_allclose(model.model, np.array([[POS_VAL]]))
 
     def test_implies(self):
         A, B = self.alpha_symbols[:2]
         expr = Implies(A, B)
         model = mental_model_builder(expr)
-        npt.assert_allclose(model, np.array([[1., 1.]]))
+        npt.assert_allclose(model.model, np.array([[POS_VAL, POS_VAL]]))
 
     def test_xor(self):
         A, B = self.alpha_symbols[:2]
         expr = Xor(A, B)
         model = mental_model_builder(expr)
-        npt.assert_allclose(model, np.array([[1., 0.], [0., 1.]]))
+        npt.assert_allclose(model.model, np.array([[POS_VAL, IMPL_NEG], [IMPL_NEG, POS_VAL]]))
 
     def test_equals(self):
         A, B = self.alpha_symbols[:2]
         expr = Equivalent(A, B)
         model = mental_model_builder(expr)
-        npt.assert_allclose(model, np.array([[1., 1.]]))
+        npt.assert_allclose(model.model, np.array([[POS_VAL, POS_VAL]]))
 
     def test_not(self):
         A, B = self.alpha_symbols[:2]
         expr = Not(A)
         model = mental_model_builder(expr)
-        npt.assert_allclose(model, np.array([[-1.]]))
+        npt.assert_allclose(model.model, np.array([[EXPL_NEG]]))
 
     def test_or_notA_B(self):
         A, B = self.alpha_symbols[:2]
         expr = A | ~B
         model = mental_model_builder(expr)
-        npt.assert_allclose(model, np.array([[]]))
+        npt.assert_allclose(model.model, np.array([[]]))
 
     def test_and_not_A_B(self):
         A, B = self.alpha_symbols[:2]
         expr = And(Not(A), B)
         model = mental_model_builder(expr)
-        npt.assert_allclose(model, np.array([[-1., 1.]]))
+        npt.assert_allclose(model.model, np.array([[EXPL_NEG, POS_VAL]]))
 
     def test_and_negA_negB(self):
         A, B = self.alpha_symbols[:2]
         expr = And(~A, ~B)
         model = mental_model_builder(expr)
-        npt.assert_allclose(model, np.array([[-1., -1.]]))
+        npt.assert_allclose(model.model, np.array([[EXPL_NEG, EXPL_NEG]]))
 
     def test_implication(self):
         A, B = self.alpha_symbols[:2]
         expr = Implies(A, B)
         model = mental_model_builder(expr)
-        npt.assert_allclose(model, np.array([[1., 1.], [0., 1.], [0., 0.]]))
+        npt.assert_allclose(model.model, np.array([[POS_VAL, POS_VAL], [IMPL_NEG, POS_VAL], [IMPL_NEG, IMPL_NEG]]))
 
 
 class TestComposedModels(unittest.TestCase):
 
-    alpha_symbols = symbols("A B C D E F G")  # defining symbols
+    alpha_symbols = symbols("a b c d e f g")  # defining symbols
 
     def test_print_long_example(self):
         A, B, C, D, E, F, G = self.alpha_symbols
         expr = And(A, Or(B, C), Xor(D, E))
         model = mental_model_builder(expr)
         npt.assert_allclose(
-            model,
+            model.model,
             np.array(
-                [[1.0, 1.0, 0.0, 1.0, 0.0],
-                 [1.0, 1.0, 0.0, 0.0, 1.0],
-                 [1.0, 0.0, 1.0, 1.0, 0.0],
-                 [1.0, 0.0, 1.0, 0.0, 1.0],
-                 [1.0, 1.0, 1.0, 1.0, 0.0],
-                 [1.0, 1.0, 1.0, 0.0, 1.0]]
+                [[POS_VAL, IMPL_NEG, POS_VAL, IMPL_NEG, POS_VAL]
+                 [POS_VAL, IMPL_NEG, POS_VAL, POS_VAL, IMPL_NEG]
+                 [POS_VAL, POS_VAL, IMPL_NEG, IMPL_NEG, POS_VAL]
+                 [POS_VAL, POS_VAL, IMPL_NEG, POS_VAL, IMPL_NEG]
+                 [POS_VAL, POS_VAL, POS_VAL, IMPL_NEG, POS_VAL]
+                 [POS_VAL, POS_VAL, POS_VAL, POS_VAL, IMPL_NEG]]
             )
         )
 
     def test_B_in_or_xor(self):
-        A, B, C, D = symbols("A B C D")
+        A, B, C, D, *_ = self.alpha_symbols
         expr = And(A, Or(B, C), Xor(B, D))
         model = mental_model_builder(expr)
         npt.assert_allclose(
-            model,
-            np.array([[1.0, 2.0, 0.0, 0.0],
-                      [1.0, 2.0, 1.0, 0.0],
-                      [1.0, 1.0, 1.0, 0.0],
-                      [1.0, 1.0, 0.0, 1.0],
-                      [1.0, 0.0, 1.0, 1.0],
-                      [1.0, 1.0, 1.0, 1.0]])
+            model.model,
+            np.array([[POS_VAL, IMPL_NEG, POS_VAL, POS_VAL],
+                      [POS_VAL, POS_VAL, IMPL_NEG, IMPL_NEG],
+                      [POS_VAL, POS_VAL, POS_VAL, IMPL_NEG]])
         )
         raise NotSureThisIsRightError("Xor and Or might conflict")
 
     def test_A_and_B_XOR_B_and_C(self):
-        A, B, C, D = symbols("A B C D")
+        A, B, C, D, *_ = self.alpha_symbols
         expr = Xor(And(A, B), And(B, C))
         model = mental_model_builder(expr)
         print("this is is the interesting part", model)
         npt.assert_allclose(
-            model,
+            model.model,
             np.array(
-                [[1., 1., 0.],
-                 [0., 1., 1.]]))
+                [[POS_VAL, POS_VAL, IMPL_NEG],
+                 [IMPL_NEG, POS_VAL, POS_VAL]]))
 
     def test_implies_A_B_and_C(self):
-        A, B, C = symbols("A B C")
+        A, B, C, *_ = self.alpha_symbols
         expr = A >> (A & C)
         model = mental_model_builder(expr)
-        npt.assert_almost_equal(model, np.array([]))
+        npt.assert_almost_equal(model.model, np.array([POS_VAL, POS_VAL, POS_VAL]))
 
     def test_A_or_B_and_A_ore_B(self):
-        A, B = symbols("A B")
+        A, B, *_ = self.alpha_symbols
         expr = (A | B) & (A ^ B)
         model = mental_model_builder(expr)
-        npt.assert_almost_equal(model, np.array([]))
+        npt.assert_almost_equal(model.model, np.array([[IMPL_NEG, POS_VAL], [POS_VAL, IMPL_NEG]]))
 
 
 #    def test_all_variations_neg_pos_connectives_sys2(self):

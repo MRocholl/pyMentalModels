@@ -2,16 +2,45 @@
 # -*- coding: iso-8859-15 -*-
 import unittest
 
+import numpy as np
+import numpy.testing as npt
+
 from pyMentalModels.operators import intuit_op, explicit_op
 from pyMentalModels.modal_parser import parse_format
-from pyMentalModels.numpy_reasoner import mental_model_builder, _merge_models
+from pyMentalModels.numpy_reasoner import mental_model_builder
+from pyMentalModels.infer import infer
+from pyMentalModels.pretty_printing import pretty_print_atom_assign
 
-""" Modal logical stuff and stuff regarding sympy.truthtable solution"""
+
+def _infer(expressions, op=intuit_op):
+
+    sympified_expressions = [
+        parse_format(expr, op)
+        for expr in expressions
+    ]
+    print(sympified_expressions)
+
+    models = []
+    for sympified_expression in sympified_expressions:
+        print("The expression to be evaluated is: {}".format(sympified_expression))
+        model = mental_model_builder(sympified_expression)
+        print(model)
+        models.append(model)
+        print("The mental model that has been created is:")
+        for possible_world in model.model:
+            print(pretty_print_atom_assign(model.atoms_model, possible_world, args.mode))
+
+    result = infer(models)
+    for possible_world in result.model:
+            print(possible_world)
+            print(pretty_print_atom_assign(result.atoms_model, possible_world, args.mode))
 
 
-def _eval_expr(expr, mode):
+def _eval_expr(expressions, mode):
     op = intuit_op if mode == "intuitive" else explicit_op
-    return mental_model_builder(parse_format(expr, op=op))
+    result = infer(*(mental_model_builder(parse_format(expr, op=op) for expr in expressions)))
+    return result.model
+
 
 class TestLispCases(unittest.TestCase):
     def test_basic_cases(self):
@@ -21,7 +50,10 @@ class TestLispCases(unittest.TestCase):
         This premise is a self-contradiction.
         The models of premise 1 represent:  Null model.
         Number of models constructed equals 0
+        """
+        npt.assert_array_equal(mental_model_builder(parse_format("a & ~a", intuit_op)).model, np.array([[]]))
 
+        """
         2 A OR NOT A.
 
         The models of premise 1 represent:
@@ -29,7 +61,10 @@ class TestLispCases(unittest.TestCase):
           ¬ A {T1 (((- A)))}
         Number of models constructed equals 2
 
+        """
+        npt.assert_array_equal(mental_model_builder(parse_format("a | ~a", intuit_op)).model, np.array([[-2.], [1.]]))
 
+        """
         3 B. IF A THEN B.
 
         The models of premise 1 represent:
@@ -41,6 +76,10 @@ class TestLispCases(unittest.TestCase):
           B, and  A.
         Number of models constructed equals 3
 
+        """
+        npt.assert_array_equal(_eval_expr(["b", "a -> b"], "intuitive"), np.array([[1., 1.]]))
+
+        """
 
         4 NOT A. IF A THEN B.
 
@@ -53,6 +92,11 @@ class TestLispCases(unittest.TestCase):
          NOT A, and  T4.
         Number of models constructed equals 3
 
+        """
+
+        npt.assert_array_equal(_eval_expr(["~a", "a -> b"], "intuitive"), np.array([[]]))
+
+        """
 
         5 A. IF A THEN B. B.
 
@@ -69,6 +113,9 @@ class TestLispCases(unittest.TestCase):
           A, and  B.
         Number of models constructed equals 5
 
+        """
+        npt.assert_array_equal(_eval_expr(["a", "a -> b", "b"], "intuitive"), np.array([[1., 1.]]))
+        """
 
         6 A. IF A THEN B. A AND B AND C.
 
@@ -85,6 +132,11 @@ class TestLispCases(unittest.TestCase):
           A,  B, and  C.
         Number of models constructed equals 5
 
+        """
+
+        npt.assert_array_equal(_eval_expr(["a", "a -> b", "a & b & c"], "intuitive"), np.array([[1., 1., 1.]]))
+
+        """
 
         7 A. IF A THEN COMMA B AND C. A AND B AND C.
 
@@ -101,6 +153,9 @@ class TestLispCases(unittest.TestCase):
           A,  B, and  C.
         Number of models constructed equals 5
 
+        """
+        npt.assert_array_equal(_eval_expr(["a", "a -> (b & c)", "a & b & c"], "intuitive"), np.array([[1., 1., 1.]]))
+        """
 
         8 A. IF A THEN B. B AND A.
 
@@ -117,6 +172,10 @@ class TestLispCases(unittest.TestCase):
           A, and  B.
         Number of models constructed equals 5
 
+        """
+
+        npt.assert_array_equal(_eval_expr(["a", "a -> b", "b & a"], "intuitive"), np.array([[1., 1.]]))
+        """
 
         9 IF A THEN B. A AND NOT B.
 
@@ -128,6 +187,9 @@ class TestLispCases(unittest.TestCase):
         Premise 2 is IMPOSSIBLE given the previous premise or premises, and vice versa [inconsistent].  Premises so far yield models of 0 possibilities:- Null model.
         Number of models constructed equals 2
 
+        """
+
+        """
 
         10 IF A THEN B. A. NOT B.
 
@@ -143,6 +205,9 @@ class TestLispCases(unittest.TestCase):
         Premise 3 is IMPOSSIBLE given the previous premise or premises, and vice versa [inconsistent].  Premises so far yield models of 0 possibilities:- Null model.
         Number of models constructed equals 4
 
+        """
+
+        """
 
         11 A OR B. A.
 
@@ -158,6 +223,9 @@ class TestLispCases(unittest.TestCase):
             A    B
         Number of models constructed equals 7
 
+        """
+
+        """
 
         12 A OR B. B.
 
@@ -173,6 +241,9 @@ class TestLispCases(unittest.TestCase):
             A    B
         Number of models constructed equals 7
 
+        """
+
+        """
 
         13 A OR B. A AND B.
 
@@ -188,6 +259,9 @@ class TestLispCases(unittest.TestCase):
             A    B
         Number of models constructed equals 7
 
+        """
+
+        """
 
         14 A. A OR B.
 
@@ -203,6 +277,9 @@ class TestLispCases(unittest.TestCase):
             A    B
         Number of models constructed equals 7
 
+        """
+
+        """
 
         15 A OR B. C.
 
@@ -218,6 +295,9 @@ class TestLispCases(unittest.TestCase):
             A    C    B
         Number of models constructed equals 7
 
+        """
+
+        """
 
         16 A. A ORE B. NOT B.
 
@@ -235,6 +315,9 @@ class TestLispCases(unittest.TestCase):
           A,  T22, and NOT B.
         Number of models constructed equals 7
 
+        """
+
+        """
 
         17 NOT A. A ORE B. B.
 
@@ -251,6 +334,9 @@ class TestLispCases(unittest.TestCase):
          NOT A,  B, and  T23.
         Number of models constructed equals 6
 
+        """
+
+        """
 
         18 NOT A. A OR B. B.
 
@@ -268,6 +354,10 @@ class TestLispCases(unittest.TestCase):
          NOT A,  B, and  T25.
         Number of models constructed equals 7
 
+        """
+
+
+        """
 
         19 A OR B. NOT B. A.
 
@@ -285,6 +375,9 @@ class TestLispCases(unittest.TestCase):
           A,  T28, and NOT B.
         Number of models constructed equals 7
 
+        """
+
+        """
 
         20 A OR B. NOT A. NOT A AND B AND C.
 
@@ -302,6 +395,9 @@ class TestLispCases(unittest.TestCase):
           B,  T29, NOT A, and  C.
         Number of models constructed equals 7
 
+        """
+
+        """
 
         21 A OR B. NOT B. A AND NOT B.
 
@@ -319,6 +415,9 @@ class TestLispCases(unittest.TestCase):
           A,  T32, and NOT B.
         Number of models constructed equals 7
 
+        """
+
+        """
 
         22 A OR B. NOT A. NOT B.
 
@@ -335,6 +434,9 @@ class TestLispCases(unittest.TestCase):
         Premise 3 is IMPOSSIBLE given the previous premise or premises, and vice versa [inconsistent].  Premises so far yield models of 0 possibilities:- Null model.
         Number of models constructed equals 6
 
+        """
+
+        """
 
         23 A ORE B. A OR B.
 
@@ -354,6 +456,9 @@ class TestLispCases(unittest.TestCase):
             A    B {T35 (((- A)))}
         Number of models constructed equals 11
 
+        """
+
+        """
 
         24 A OR B. A ORE B.
 
@@ -373,4 +478,3 @@ class TestLispCases(unittest.TestCase):
             A    B {T41 (((- A)))}
         Number of models constructed equals 11
         """
-        assert parse_format("A & ~A") == []

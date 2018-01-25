@@ -7,6 +7,7 @@ import logging
 from itertools import product
 
 from pyMentalModels.numpy_reasoner import _merge_models
+from pyMentalModels.mental_model import mental_model
 
 from typing import List
 
@@ -24,22 +25,22 @@ def infer(models: List, task="infer"):
     Returns
     -------
         if "infer":
+            Infer a conclusion based on the premises
 
     """
     # first preprocess all mental models to share the same column space
-    all_atoms_in_all_models = sorted(set().union(*(set(mental_model.atoms_model) for mental_model in models)), key=str)
+    all_atoms_in_all_models = sorted(set().union(*(set(model.atoms_model) for model in models)), key=str)  # type: List
     atom_index_mapping_all = {atom: i for i, atom in enumerate(all_atoms_in_all_models)}
 
     resized_mental_models = []
 
-    for mental_model in models:
-        resized_mental_model = np.zeros((len(mental_model.model), len(all_atoms_in_all_models)))
-        resized_mental_model[:, list(map(lambda atom: atom_index_mapping_all[atom], mental_model.atoms_model))] = mental_model.model
+    for model in models:
+        resized_mental_model = np.zeros((len(model.model), len(all_atoms_in_all_models)))
+        resized_mental_model[:, list(map(lambda atom: atom_index_mapping_all[atom], model.atoms_model))] = model.model
         logging.debug(resized_mental_model)
         resized_mental_models.append(resized_mental_model)
     for i, mod in enumerate(resized_mental_models):
         print("The {}th model is: {}".format(i, mod))
-
 
     possible_models = []
     pairings_of_models = list(product(*resized_mental_models))
@@ -49,5 +50,7 @@ def infer(models: List, task="infer"):
             possible_models.append(possible_model)
             logging.info("Given the models: {}".format(pairing))
             logging.info("The following model is possible: {}".format(possible_model))
-    possible_models = np.vstack((possible_models))
-    return None, possible_models, all_atoms_in_all_models, atom_index_mapping_all
+    if possible_models:
+        possible_models = np.vstack((possible_models))
+
+    return mental_model(tuple(model.expr for model in models), possible_models, all_atoms_in_all_models, atom_index_mapping_all)

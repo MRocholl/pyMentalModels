@@ -9,6 +9,7 @@ from enum import Enum
 import logging
 
 from sympy import symbols
+from pyMentalModels.mental_model import mental_model
 
 
 #######################################################################
@@ -184,7 +185,7 @@ def mental_model_builder(sympified_expr, mode=Insight.INTUITIVE):
     # map every atom to its corresponding index in the model
     atom_index_mapping = {atom: i for i, atom in enumerate(exp_atoms)}
 
-    return sympified_expr, map_instance_to_operation(sympified_expr)(sympified_expr, atom_index_mapping, exp_atoms), exp_atoms, atom_index_mapping
+    return mental_model(sympified_expr, map_instance_to_operation(sympified_expr)(sympified_expr, atom_index_mapping, exp_atoms), exp_atoms, atom_index_mapping)
 
 
 def map_instance_to_operation(el):
@@ -402,12 +403,12 @@ def build_implication(exp, atom_index_mapping, exp_atoms, mode=Insight.INTUITIVE
 
         elif not isinstance(consequent, Symbol):
             modelized_antecedent = np.zeros((1, len(exp_atoms)))
-            modelized_antecedent[:, atom_index_mapping[antecedent]] = 1
+            modelized_antecedent[:, atom_index_mapping[antecedent]] = POS_VAL
             modelized_consequent = map_instance_to_operation(consequent)(consequent, atom_index_mapping, exp_atoms)
         else:
             modelized_antecedent = map_instance_to_operation(antecedent)(antecedent, atom_index_mapping, exp_atoms)
             modelized_consequent = np.zeros((1, len(exp_atoms)))
-            modelized_consequent[:, atom_index_mapping[consequent]] = 1
+            modelized_consequent[:, atom_index_mapping[consequent]] = POS_VAL
 
         merged_sub_models = _merge_models(
             modelized_antecedent, modelized_consequent, atom_index_mapping=atom_index_mapping,
@@ -528,6 +529,7 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
     if op == "And":
         logging.debug("Arguments for `And` merge: ")
         logging.debug(sub_models)
+        print(sub_models)
 
         iter_models = iter(sub_models)
         merged_models = next(iter_models)
@@ -561,7 +563,12 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
                     logging.debug("Allowed models are: {}".format(allowed_models))
                     if not allowed_models:
                         continue
-                    reshaped_submodel = np.repeat(submodel, len(allowed_models), axis=0)
+                    allowed_models = np.stack(allowed_models)
+                    reshaped_submodel = np.repeat(np.atleast_2d(submodel), len(allowed_models), axis=0)
+                    print("LENGTH ALLOWD", len(allowed_models))
+                    print("Sub", submodel)
+                    print("reshaped", reshaped_submodel)
+                    print(allowed_models)
                     logging.debug("Reshaped submodel:", reshaped_submodel)
                     submodel_added_with_allowed_models = reshaped_submodel + allowed_models
                     # after adding values can either be 2, -2 , -3 or -4 for the indexes that are active in both models
@@ -665,20 +672,37 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
         logging.debug("complement_consequent")
         logging.debug(complement_consequent)
 
-        merged_models = _merge_models(antecedent, consequent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms, op="And")
-        logging.debug("Combination 1 1")
-        logging.debug(merged_models)
+        list_of_combinations = []
 
+        # antecedent and conseqent together
+        antecedent_consequent = _merge_models(antecedent, consequent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms, op="And")
+
+        if antecedent_consequent.size:
+            list_of_combinations.append(antecedent_consequent)
+
+        logging.debug("Combination 1 1")
+        logging.debug(antecedent_consequent)
+
+        # complement of ante and consequent
         comp_antecedent_consequent = _merge_models(complement_antecedent, consequent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms, op="And")
+
+        if comp_antecedent_consequent.size:
+            list_of_combinations.append(comp_antecedent_consequent)
+
         logging.debug("Combination 0 1")
         logging.debug(comp_antecedent_consequent)
 
-        merged_models = np.vstack((merged_models, comp_antecedent_consequent))
+        # ante and complement of consequent
         comp_antecedent_comp_consequent = _merge_models(complement_antecedent, complement_consequent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms, op="And")
+
+        if comp_antecedent_comp_consequent.size:
+            list_of_combinations.append(comp_antecedent_comp_consequent)
+
         logging.debug("Combination 0 0")
         logging.debug(comp_antecedent_comp_consequent)
 
-        merged_models = np.vstack((merged_models, comp_antecedent_comp_consequent))
+        # complement of ante and complement of consequent
+        merged_models = np.vstack(list_of_combinations)
         logging.debug("Total merged `Implication` model: ")
         logging.debug(merged_models)
         return merged_models
