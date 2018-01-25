@@ -8,7 +8,6 @@ from sympy.core.symbol import Symbol
 from enum import Enum
 import logging
 
-from sympy import symbols
 from pyMentalModels.mental_model import mental_model
 
 
@@ -109,10 +108,9 @@ class Insight(Enum):
 
 
 """ WARNING the merge and function is highly dependend on the choice of POS_VAL IMPL_NEG and EXPL_NEG"""
-POS_VAL = 1
+POS_VAL = 2
 IMPL_NEG = -1
 EXPL_NEG = -2
-
 
 
 #######################################################################
@@ -282,7 +280,7 @@ def build_and(exp, atom_index_mapping, exp_atoms):
         and_model = np.zeros((1, len(exp_atoms)))
         and_model[
             :, list(map(lambda x: atom_index_mapping[x], and_args))
-        ] = 1.
+        ] = POS_VAL
         return and_model
     else:
         symbol_list = []
@@ -302,7 +300,7 @@ def build_and(exp, atom_index_mapping, exp_atoms):
             and_model = np.zeros((1, len(exp_atoms)))
             and_model[
                 :, list(map(lambda x: atom_index_mapping[x], symbol_list))
-            ] = 1.
+            ] = POS_VAL
             modelized_subexpressions.append(and_model)
 
         # merge the generated submodels to an overall model of `And`
@@ -450,7 +448,7 @@ def build_equals(exp, atom_index_mapping, exp_atoms, mode=Insight.INTUITIVE):
     antecedent, consequent = exp.args
 
     if all(isinstance(el, Symbol) for el in exp.args):
-        pos_valuations = [(1, 1), (0, 0)]
+        pos_valuations = [(POS_VAL, POS_VAL), (IMPL_NEG, IMPL_NEG)]
         bi_implication_model = np.zeros((len(pos_valuations), len(exp_atoms)))
         bi_implication_model[
             :, list(map(lambda x: atom_index_mapping[x], [antecedent, consequent]))

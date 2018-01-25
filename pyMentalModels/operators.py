@@ -22,7 +22,7 @@ intuit_op = {
     '[]': "Necessary",
     '<>': "Possibly",
     '~': "Not",
-    '|': "Xor",
+    '|': "Or",
     '&': "And",
     '->': "And",
     '<->': "And",
