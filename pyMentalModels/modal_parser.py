@@ -4,6 +4,8 @@
 from sympy import sympify
 from typing import List, Dict
 
+from pyMentalModels.custom_logical_classes import Necessary, Possibly
+
 
 def parse_expr(expression):
     """
@@ -69,4 +71,4 @@ def parse_format(expression: str, mode):
     Short function to both parse and format an expression and return a sympy object
     """
     parsed_expression = parse_expr(expression)
-    return sympify(sympify_formatter(parsed_expression, mode))
+    return sympify(sympify_formatter(parsed_expression, mode), locals={"Necessary": Necessary, "Possibly": Possibly})

@@ -9,6 +9,7 @@ from enum import Enum
 import logging
 
 from pyMentalModels.mental_model import mental_model
+from pyMentalModels.custom_logical_classes import Necessary, Possibly
 
 
 #######################################################################
@@ -188,15 +189,16 @@ def mental_model_builder(sympified_expr, mode=Insight.INTUITIVE):
 
 def map_instance_to_operation(el):
     "maps every logical instance to its builder function."
-    print(el)
     maps = iter((
         (Or, build_or),
         (And, build_and),
         (Xor, build_xor),
-        (Not, build_not),
         (Implies, build_implication),
         (Equivalent, build_and),
+        (Not, build_not),
         (Symbol, lambda *_: np.array([[POS_VAL]])),
+        (Necessary, build_necessary),
+        (Possibly, build_possibly)
     ))
     try:
         return next(builder for type_, builder in maps if isinstance(el, type_))
@@ -320,11 +322,14 @@ def build_xor(exp, atom_index_mapping, exp_atoms):
 
     if all(isinstance(el, Symbol) for el in exp.args):
         xor_model = np.zeros((nr_xor_args, len(exp_atoms)))
-        all_combinations = np.eye(nr_xor_args)
+        all_combinations = np.eye(nr_xor_args) * POS_VAL
+        print(all_combinations)
         all_combinations[np.where(all_combinations != POS_VAL)] = IMPL_NEG
+        print(all_combinations)
         xor_model[
             :, list(map(lambda x: atom_index_mapping[x], xor_args))
         ] = all_combinations
+        print(xor_model)
         return xor_model
     else:
         symbol_list = []
@@ -341,7 +346,7 @@ def build_xor(exp, atom_index_mapping, exp_atoms):
 
         if symbol_list:
             xor_model = np.zeros((len(symbol_list), len(exp_atoms)))
-            all_combinations = np.eye(len(symbol_list))
+            all_combinations = np.eye(len(symbol_list)) * POS_VAL
             all_combinations[np.where(all_combinations != POS_VAL)] = IMPL_NEG
             xor_model[
                 :, list(map(lambda x: atom_index_mapping[x], symbol_list))
@@ -493,6 +498,37 @@ def build_not(exp, atom_index_mapping, exp_atoms):
         model_positive = map_instance_to_operation(neg_arg)(neg_arg, atom_index_mapping, exp_atoms)
         neg_model = _complement_array_model(model_positive, atom_index_mapping, exp_atoms)
         return neg_model
+
+
+def build_necessary(exp, atom_index_mapping, exp_atoms):
+    """
+    Builds model of `necessary` expression
+    """
+    assert isinstance(exp, Necessary)
+    """
+    (2) Necessary
+    The problem is that the truth value of A does not determine the truth value for []A. For example, when A is ‘Dogs are dogs’, []A is true, but when A is ‘Dogs are pets’, []A is false
+
+    (3) Possible
+
+    Rules for the modal logical system:
+    ==================================
+
+    (~) v(~A, w)=T iff v(A, w)=F.
+
+    (->) v(A -> B, w)=T iff v(A, w)=F or v(B, w)=T. !!!!! Implication is AND in implicit mode
+
+    (5) v([]A, w)=T iff for every world w′ in W, v(A, w′)=T.
+
+    Furthermore, [](A&B) entails []A&[]B and vice versa; while []A|[]B entails [](A|B), but not vice versa. This reflects the patterns exhibited by the universal quantifier: ∀x(A&B) entails ∀xA&∀xB and vice versa, while ∀xA ∨ ∀xB entails ∀x(A ∨ B) but not vice versa
+"""
+
+
+def build_possibly(exp, atom_index_mapping, exp_atoms):
+    """
+    Builds model of `possibly` expression
+    """
+    assert isinstance(exp, Possibly)
 
 
 #######################################################################

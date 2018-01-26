@@ -28,6 +28,7 @@ if __name__ == "__main__":
         maintainer_email=MAINTAINER_EMAIL,
         description=DESCRIPTION,
         url=URL,
+        scripts=["mental-model"],
         long_description=LONG_DESCRIPTION,
         packages=find_packages(),
         package_data={"docs": ["*"]},
