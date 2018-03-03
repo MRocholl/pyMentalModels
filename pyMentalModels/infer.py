@@ -152,9 +152,6 @@ def infer(models: List, task="infer"):
     return mental_model(tuple(model.expr for model in models), possible_models, all_atoms_in_all_models, atom_index_mapping_all)
 
 
-
-
-
 """
     pairings_of_models = list(product(*resized_mental_models))
 
@@ -165,4 +162,3 @@ def infer(models: List, task="infer"):
             logging.info("Given the models: {}".format(pairing))
             logging.info("The following model is possible: {}".format(possible_model))
     """
-

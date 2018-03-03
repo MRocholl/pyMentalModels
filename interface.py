@@ -47,6 +47,7 @@ if __name__ == "__main__":
     parser.add_argument("expression", help="Expressions to be parsed, separated by comma. i.e. 'A, A -> B'")
     parser.add_argument("-m", "--mode", choices=["intuitive", "explicit"], default="intuitive", help="Can be either intuitive or explicit")
     parser.add_argument("-v", "--verbose", choices=["INFO", "DEBUG"], default="INFO", help="Level of verbosity to set for the program")
+    parser.add_argument("-i", "--infer", choices=["consitency"], default="consistency", help="Chose what to check the mental modles for. Choices are 1. consistency, 2. ...")
 
     args, unknowns = parser.parse_known_args()
 
