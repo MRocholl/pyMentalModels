@@ -43,62 +43,58 @@ from pyMentalModels.custom_logical_classes import Necessary, Possibly
 # --------------------------|-------------------------|--------------------------------
 # If and only if A then B   |       A   B             |              A   B
 #                           |        ...              |             ~A  ~B
-
-"""
-
-Addinf to models together happens in function of the upper level operator
-I.e. And(OR...Or....Xor...) first creates models for OR....Or...and Xor...
-before merging them together based on the behavior of the `And`-operator
-
-For And this is a not so interesting case as the all the models have to keep true
-
-For Or, Xor, Imply the case is different as all of them have models where one part of the model
-is allowed to be false or not represented
-
-
-The implementation here for `Or` first adds each model to the merged_model
-and adds all the models together like the `And` operator does.
-Hence, the `OR` operator acts quite like a combination of both the `Xor`
-and And operator for all subexpressions piecewise and total.
-    For (A & B) or (C & D) or (E xor F)
-    with (A & B):= Arg1, (C & D):=Arg2, etc...
-
-    The Model is:
-    -------------
-    Arg1 xor Arg2 xor Arg3  // This is just a vstack
-    Arg1 & Arg2             // Piecewise addition
-    Arg2 & Arg3             //      ""
-    Arg1 & Arg2 & Arg3      // Addition of all three
-    ========================
-    Stacked from top to bottom
-
-The implementation for the material implication `Implies` is not quite clear yet
-The straight-forward way would be to duck-type it to the `And` behavior.
-
-
-
-The problem child `Not`
-
-The builder catches Nots as not being a symbol and will eventually try to
-construct a model of a `Not(Atom)` or `Not(sub_expr)`
-
-Examples of this behaviour would be:
-
-    Not(A) or B             | (A | B) & ~(C | D) // Crete full model
-                            |                    // and take complement
-    Result should be:       | Result should be:
-                            |                            |  C
-    ~A                      |   A       ~C  ~D <-- from  |      D
-        B                   |       B   ~C  ~D           |  C   D
-    ~A  B                   |This does look probelmatic.
-
-Hence, an explicit `Not` in the expression will lead to an explicit `Not`
-representation in the final model.
-There seems to be a big difference in the semantic importance between the
-negation of an atom and the negation of a subexpression.
-
-
-"""
+#
+# Addinf to models together happens in function of the upper level operator
+# I.e. And(OR...Or....Xor...) first creates models for OR....Or...and Xor...
+# before merging them together based on the behavior of the `And`-operator
+#
+# For And this is a not so interesting case as the all the models have to keep true
+#
+# For Or, Xor, Imply the case is different as all of them have models where one part of the model
+# is allowed to be false or not represented
+#
+#
+# The implementation here for `Or` first adds each model to the merged_model
+# and adds all the models together like the `And` operator does.
+# Hence, the `OR` operator acts quite like a combination of both the `Xor`
+# and And operator for all subexpressions piecewise and total.
+#     For (A & B) or (C & D) or (E xor F)
+#     with (A & B):= Arg1, (C & D):=Arg2, etc...
+#
+#     The Model is:
+#     -------------
+#     Arg1 xor Arg2 xor Arg3  // This is just a vstack
+#     Arg1 & Arg2             // Piecewise addition
+#     Arg2 & Arg3             //      ""
+#     Arg1 & Arg2 & Arg3      // Addition of all three
+#     ========================
+#     Stacked from top to bottom
+#
+# The implementation for the material implication `Implies` is not quite clear yet
+# The straight-forward way would be to duck-type it to the `And` behavior.
+#
+#
+#
+# The problem child `Not`
+#
+# The builder catches Nots as not being a symbol and will eventually try to
+# construct a model of a `Not(Atom)` or `Not(sub_expr)`
+#
+# Examples of this behaviour would be:
+#
+#     Not(A) or B             | (A | B) & ~(C | D) // Crete full model
+#                             |                    // and take complement
+#     Result should be:       | Result should be:
+#                             |                            |  C
+#     ~A                      |   A       ~C  ~D <-- from  |      D
+#         B                   |       B   ~C  ~D           |  C   D
+#     ~A  B                   |This does look probelmatic.
+#
+# Hence, an explicit `Not` in the expression will lead to an explicit `Not`
+# representation in the final model.
+# There seems to be a big difference in the semantic importance between the
+# negation of an atom and the negation of a subexpression.
+#
 
 
 class Insight(Enum):
@@ -151,28 +147,29 @@ def mental_model_builder(sympified_expr, mode=Insight.INTUITIVE):
         Insight can be either Insight.INTUITIVE or Insight.FULL
         The mental models differ accordingly:
 
-            The sentence               The mental       The fully
-                                       models of its    explicit
-                                       possibilities    models
-            ==========================|==============|============
-            A And B                   |    A   B     |    A   B
-            --------------------------|--------------|------------
-            Neither A nor B           |   ~A  ~B     |   ~A  ~B
-            --------------------------|--------------|------------
-            A or else B, but not both |    A         |    A  ~B
-                                      |        B     |   ~A   B
-            --------------------------|--------------|------------
-            A or B or both            |    A         |    A  ~B
-                                      |        B     |   ~A   B
-                                      |    A   B     |    A   B
-            --------------------------|--------------|------------
-            If A then B               |    A   B     |    A   B
-                                      |     ...      |   ~A  ~B
-                                      |              |   ~A   B
-            --------------------------|--------------|------------
-            If and only if A then B   |    A   B     |    A   B
-                                      |     ...      |   ~A  ~B
-
+           +--------------------------+--------------+------------+
+           |The sentence              |The mental    |  The fully |
+           |                          |models of its |  explicit  |
+           |                          |possibilities |  models    |
+           +==========================+==============+============+
+           |A And B                   |    A   B     |    A   B   |
+           +--------------------------+--------------+------------+
+           |Neither A nor B           |   ~A  ~B     |   ~A  ~B   |
+           +--------------------------+--------------+------------+
+           |A or else B, but not both |    A         |    A  ~B   |
+           |                          |        B     |   ~A   B   |
+           +--------------------------+--------------+------------+
+           |A or B or both            |    A         |    A  ~B   |
+           |                          |        B     |   ~A   B   |
+           |                          |    A   B     |    A   B   |
+           +--------------------------+--------------+------------+
+           |If A then B               |    A   B     |    A   B   |
+           |                          |     ...      |   ~A  ~B   |
+           |                          |              |   ~A   B   |
+           +--------------------------+--------------+------------+
+           |If and only if A then B   |    A   B     |    A   B   |
+           |                          |     ...      |   ~A  ~B   |
+           +--------------------------+--------------+------------+
 
     -------
     Mental model representation of logical expression
@@ -368,11 +365,11 @@ def build_implication(exp, atom_index_mapping, exp_atoms, mode=Insight.INTUITIVE
     or Insight.Full
 
     "A -> B"
-    Should yield model
-    1 1     mode = INTUITIVE
-    ---
-    0 1     mode = FULL
-    0 0
+    Should yield model:
+    * 1 1     mode = INTUITIVE
+    * ---
+    * 0 1     mode = FULL
+    * 0 0
 
     Parameters
     ----------
