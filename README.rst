@@ -3,7 +3,7 @@ pyMentalModels
 |Docs_|
 pyMentalModels is a Python implementation of the Mental Model Theory.
 
-A WebApp with a preliminary version can be found at https://modalmentalmodel.herokuapp.com
+A WebApp with a preliminary version can be found at https://mentalmodel.herokuapp.com
 
 A convenience script is also provided.
 
