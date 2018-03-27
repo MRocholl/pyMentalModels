@@ -148,7 +148,8 @@ def mental_model_builder(sympified_expr, mode=Insight.INTUITIVE):
                 Tuple of arguments the outermost logical operator takes
     mode: Insight
         Insight can be either Insight.INTUITIVE or Insight.FULL
-        The mental models differ accordingly:
+
+    Returns
     -------
     Mental model representation of logical expression
 
@@ -194,14 +195,15 @@ def build_or(exp, atom_index_mapping, exp_atoms):
     exp:
         expression with outer-most logical operator being `Or`
 
-    atom_index_mapping:
+    atom_index_mapping: Dict
         mapping from all the atoms to their index in the model/array
 
-    exp_atoms:
+    exp_atoms: List
         List of all the Atoms of the mental_model
 
     Returns
     -------
+        Model: np.ndarray
     """
 
     assert(isinstance(exp, Or))
