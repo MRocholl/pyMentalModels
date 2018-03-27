@@ -131,6 +131,7 @@ def infer(models: List, task="infer"):
     -------
         if "infer":
             Infer a conclusion based on the premises
+        XXX TODO
 
     """
     # first preprocess all mental models to share the same column space

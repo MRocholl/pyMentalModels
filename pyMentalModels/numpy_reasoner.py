@@ -250,6 +250,24 @@ def build_or(exp, atom_index_mapping, exp_atoms):
 
 
 def build_and(exp, atom_index_mapping, exp_atoms):
+    """
+    Builds model of `And` expression.
+
+    Parameters
+    ----------
+    exp:
+        expression with outer-most logical operator being `And`
+
+    atom_index_mapping: Dict
+        mapping from all the atoms to their index in the model/array
+
+    exp_atoms: List
+        List of all the Atoms of the mental_model
+
+    Returns
+    -------
+        Model: np.ndarray
+    """
 
     assert(isinstance(exp, (And, Implies, Equivalent)))
 
@@ -291,7 +309,24 @@ def build_and(exp, atom_index_mapping, exp_atoms):
 
 
 def build_xor(exp, atom_index_mapping, exp_atoms):
+    """
+    Builds model of `Xor` expression.
 
+    Parameters
+    ----------
+    exp:
+        expression with outer-most logical operator being `Xor`
+
+    atom_index_mapping: Dict
+        mapping from all the atoms to their index in the model/array
+
+    exp_atoms: List
+        List of all the Atoms of the mental_model
+
+    Returns
+    -------
+        Model: np.ndarray
+    """
     assert(isinstance(exp, Xor))
 
     xor_args = exp.args
@@ -345,7 +380,9 @@ def build_implication(exp, atom_index_mapping, exp_atoms, mode=Insight.INTUITIVE
     or Insight.Full
 
     "A -> B"
+
     Should yield model
+
     1 1     mode = INTUITIVE
     ---
     0 1     mode = FULL
