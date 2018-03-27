@@ -1,1 +1,0 @@
-A repository for the development of the mental model theory as a computational program
