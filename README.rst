@@ -7,9 +7,9 @@ A WebApp with a preliminary version can be found at https://modalmentalmodel.her
 
 A convenience script is also provided.
 
-.. |Docs_| image:: https://readthedocs.org/projects/pyMentalModels/badge/?version=latest
-   :target: http://pymentalmodels.readthedocs.io/en/latest/
-   :alt: Docs
+.. |Docs_| image:: https://readthedocs.org/projects/pymentalmodels/badge/?version=latest
+    :target: http://pymentalmodels.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
 
 Installation
 ============
