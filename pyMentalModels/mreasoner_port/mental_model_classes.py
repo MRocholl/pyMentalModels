@@ -51,8 +51,6 @@ class AbstractMentalModel(ABC):
         "Returns referent in model if exists"
 
 
-
-
 class QuantifiedIntension():
 
     """
@@ -66,7 +64,7 @@ class QuantifiedIntension():
 
         Parameters
         ----------
-        cardinality : TODO
+        cardinality :
         numprop : TODO
         boundary : TODO
         polarity: TODO
