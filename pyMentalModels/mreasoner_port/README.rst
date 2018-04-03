@@ -2,15 +2,17 @@
 General Structure
 =================
 
-.
-├── counterexamples.py
-├── mental_model_classes.py
-├── parser.py
-├── Quantified
-├── README.rst
-├── regex_parser.py
-├── Sentential
-└── Temporal
+.. code-block:: text
+
+    .
+    ├── counterexamples.py
+    ├── mental_model_classes.py
+    ├── parser.py
+    ├── Quantified
+    ├── README.rst
+    ├── regex_parser.py
+    ├── Sentential
+    └── Temporal
 
 
 TODO:
@@ -44,8 +46,7 @@ Also finish the python skeleton for the Models. Will keep general structure of t
             args: models_to_be_removed, model-set
             Doc: eliminates one model from modelset (remove-mod '(((A)(B))((A)(B))) test-modelset) => ((((A) (C)) ((A) (C))) (((D) (A)) ((D) (A))) (((D) (B)) ((D) (B)))) 
 
-    *   Q-model-Specific methods
-
+  *  Q-model-Specific methods
         find-referent-individuals-in-model
             args: referent, q-model 
             Doc: Finds and returns all referent individuals in a model.  (find-referent-individuals-in-model '(A) '(((- A) (B)) ((A) (B)) ((A) (B)) (T20))) => (((A) (B)) ((A) (B)))
