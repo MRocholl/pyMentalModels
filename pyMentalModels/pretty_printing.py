@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 from pyMentalModels.constants import EXPL_NEG
-
+from pyMentalModels.numpy_reasoner import Insight
 
 def pretty_print_atom_assign(atom_assignment, atoms, mode="intuitive", output="str"):
     """
@@ -26,7 +26,7 @@ def pretty_print_atom_assign(atom_assignment, atoms, mode="intuitive", output="s
             can be either "list" or "str"
 
     """
-    assert mode in ("intuitive", "explicit"), "Provided invalid argument for `mode`"
+    assert mode in Insight, "Provided invalid argument for `mode`"
     assert output in ("list", "str"), "Provided invalid argument for `mode`"
 
     if mode == "intuitive":

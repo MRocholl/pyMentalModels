@@ -66,9 +66,9 @@ def sympify_formatter(args: List, rules: Dict[str, str]):
         raise ValueError("Args cannot be empty list")
 
 
-def parse_format(expression: str, mode):
+def parse_format(expression: str, rules: Dict[str, str]):
     """
     Short function to both parse and format an expression and return a sympy object
     """
     parsed_expression = parse_expr(expression)
-    return sympify(sympify_formatter(parsed_expression, mode), locals={"Necessary": Necessary, "Possibly": Possibly})
+    return sympify(sympify_formatter(parsed_expression, rules), locals={"Necessary": Necessary, "Possibly": Possibly})

@@ -3,22 +3,25 @@
 
 from pyMentalModels.modal_parser import parse_format
 from pyMentalModels.operators import intuit_op, explicit_op
-from pyMentalModels.numpy_reasoner import mental_model_builder
+from pyMentalModels.numpy_reasoner import mental_model_builder, Insight
 from pyMentalModels.pretty_printing import pretty_print_atom_assign
-from pyMentalModels.infer import infer
+from pyMentalModels.infer import infer, InferenceTask
 
 
 import argparse
 import logging
 
 
+from enum import Enum
+
+
 def main(args):
-    mode = intuit_op if args.mode == "intuitive" else explicit_op
+    rules = intuit_op if args.mode == Insight.INTUITIVE else explicit_op
 
     expressions_to_parse = args.expression.split(", ")
 
     sympified_expressions = [
-        parse_format(expr, mode=mode)
+        parse_format(expr, rules=rules)
         for expr in expressions_to_parse
     ]
     print("The following expressions have been parsed:")
@@ -37,7 +40,7 @@ def main(args):
 
     if len(models) <= 1:
         return "Nothing to infer"
-    result = infer(models)
+    result = infer(models, args.infer)
     if not result:
         print("The result is the empty model", result.model)
     print(result)
@@ -46,13 +49,23 @@ def main(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(prog="pyMentalModel Reasoner")
+
+    description = """
+    This is an implementation of a Mental Model theory based Reasoner.
+    """
+
+    parser = argparse.ArgumentParser(prog="pyMentalModel Reasoner", description=description)
     parser.add_argument("expression", help="Expressions to be parsed, separated by comma. i.e. 'A, A -> B'")
     parser.add_argument("-m", "--mode", choices=["intuitive", "explicit"], default="intuitive", help="Can be either intuitive or explicit")
     parser.add_argument("-v", "--verbose", choices=["INFO", "DEBUG"], default="INFO", help="Level of verbosity to set for the program")
-    parser.add_argument("-i", "--infer", choices=["consitency"], default="consistency", help="Chose what to check the mental modles for. Choices are 1. consistency, 2. ...")
+    parser.add_argument("-i", "--infer", choices=["consistency"], default="consistency", help="Chose what to check the mental modles for. Choices are 1. consistency, 2. ...")
 
     args, unknowns = parser.parse_known_args()
+
+    args.infer = InferenceTask(args.infer)
+    args.mode = Insight(args.mode)
+
+
 
     log_lvl = logging.INFO if args.verbose == 'INFO' else logging.DEBUG
     logging.basicConfig(level=log_lvl)

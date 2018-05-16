@@ -12,6 +12,11 @@ from pyMentalModels.mental_model import mental_model
 from pyMentalModels.constants import EXPL_NEG, POS_VAL, IMPL_NEG
 
 from typing import List
+from enum import Enum
+
+
+class InferenceTask(Enum):
+    CONSISTENCY = "consistency"
 
 
 def combine_mental_models(model1, model2, atom_index_mapping, exp_atoms):

@@ -105,8 +105,8 @@ negation of an atom and the negation of a subexpression.
 class Insight(Enum):
 
     """Enum for the diferent insight modes intuitive and full"""
-    INTUITIVE = 0
-    FULL = 1
+    INTUITIVE = "intuitive"
+    EXPLICIT = "explicit"
 
 
 #######################################################################
