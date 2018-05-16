@@ -21,25 +21,28 @@ def main(args):
         parse_format(expr, mode=mode)
         for expr in expressions_to_parse
     ]
-    print(sympified_expressions)
+    print("The following expressions have been parsed:")
+    for exp in sympified_expressions:
+        print("\t{}".format(exp))
 
     models = []
     for sympified_expression in sympified_expressions:
         print("The expression to be evaluated is: {}".format(sympified_expression))
         model = mental_model_builder(sympified_expression)
-        print(model)
+        logging.debug("{}".format(model))
         models.append(model)
         print("The mental model that has been created is:")
         for possible_world in model.model:
-            print(pretty_print_atom_assign(model.atoms_model, possible_world, args.mode))
+            print(pretty_print_atom_assign(possible_world, model.atoms_model, args.mode))
 
     if len(models) <= 1:
         return "Nothing to infer"
     result = infer(models)
     if not result:
         print("The result is the empty model", result.model)
+    print(result)
     for possible_world in result.model:
-            print(pretty_print_atom_assign(result.atoms_model, possible_world, args.mode))
+            print(pretty_print_atom_assign(possible_world, result.atoms_model, args.mode))
 
 
 if __name__ == "__main__":

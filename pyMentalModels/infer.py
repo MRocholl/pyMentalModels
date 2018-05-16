@@ -4,23 +4,20 @@
 import numpy as np
 import logging
 
-from itertools import product
+# from itertools import product
 from functools import reduce
 
-from pyMentalModels.numpy_reasoner import _merge_models
+# from pyMentalModels.numpy_reasoner import _merge_models
 from pyMentalModels.mental_model import mental_model
+from pyMentalModels.constants import EXPL_NEG, POS_VAL, IMPL_NEG
 
 from typing import List
 
-POS_VAL = 2
-IMPL_NEG = -1
-EXPL_NEG = -2
-
 
 def combine_mental_models(model1, model2, atom_index_mapping, exp_atoms):
-    logging.info("Combining mental models: ")
-    logging.info(model1)
-    logging.info(model2)
+    logging.debug("Combining mental models: ")
+    logging.debug(model1)
+    logging.debug(model2)
 
     if not model1.size or not model2.size:
         logging.debug("Either model1 or model2 is the empty model")
@@ -51,7 +48,7 @@ def combine_mental_models(model1, model2, atom_index_mapping, exp_atoms):
         for submodel in model1:
             allowed_models = []
             for sub_model_to_check in model2:
-                print(all(same_val(*vals) for vals in zip(submodel[atom_indices_to_check], sub_model_to_check[atom_indices_to_check])))
+                # print(all(same_val(*vals) for vals in zip(submodel[atom_indices_to_check], sub_model_to_check[atom_indices_to_check])))
                 if all(same_val(*vals) for vals in zip(submodel[atom_indices_to_check], sub_model_to_check[atom_indices_to_check])):
                     allowed_models.append(sub_model_to_check)
             logging.debug("Allowed models are: {}".format(allowed_models))
@@ -61,14 +58,15 @@ def combine_mental_models(model1, model2, atom_index_mapping, exp_atoms):
             reshaped_submodel = np.repeat(np.atleast_2d(submodel), len(allowed_models), axis=0)
             logging.debug("Reshaped submodel:", reshaped_submodel)
             submodel_added_with_allowed_models = reshaped_submodel + allowed_models
-            print("#####################################################################################")
-            print("SUBMODEL: ", submodel_added_with_allowed_models)
+            logging.info("SUBMODEL: {}".format(submodel_added_with_allowed_models))
             # after adding values can either be 2, -2 , -3 or -4 for the indexes that are active in both models
             # for the other indices values are 0, -1, -2 or 1
-            # for the active indices map 2, -2, -3 and -4 to 1, -1, -2
+            # for the active indices map 4, -2, -3 and -4 to 1, -1, -2
             submodel_added_with_allowed_models[submodel_added_with_allowed_models == POS_VAL + POS_VAL] = POS_VAL
             submodel_added_with_allowed_models[submodel_added_with_allowed_models == POS_VAL + IMPL_NEG] = POS_VAL
+            submodel_added_with_allowed_models[submodel_added_with_allowed_models == IMPL_NEG + IMPL_NEG] = IMPL_NEG
             submodel_added_with_allowed_models[submodel_added_with_allowed_models == EXPL_NEG + IMPL_NEG] = EXPL_NEG
+            submodel_added_with_allowed_models[submodel_added_with_allowed_models == EXPL_NEG + EXPL_NEG] = EXPL_NEG
             logging.debug("added submodel with allowed model", submodel_added_with_allowed_models)
             sub_models_merged_model.append(submodel_added_with_allowed_models)
             logging.debug("List of valid submodels until now:", sub_models_merged_model)
@@ -133,6 +131,8 @@ def infer(models: List, task="infer"):
             Infer a conclusion based on the premises
 
     """
+    print()
+    print("Inference task is: {}".format(task))
     # first preprocess all mental models to share the same column space
     all_atoms_in_all_models = sorted(set().union(*(set(model.atoms_model) for model in models)), key=str)  # type: List
     atom_index_mapping_all = {atom: i for i, atom in enumerate(all_atoms_in_all_models)}
@@ -145,9 +145,13 @@ def infer(models: List, task="infer"):
         if model.model.size  # getting rid of contradictions
     ]
 
-    for i, mod in enumerate(resized_mental_models):
-        print("The {}th model is: {}".format(i, mod))
+    for i, model in enumerate(resized_mental_models):
+        logging.debug("The {}th model is: {}".format(i, model))
+        print("The {}th model is:".format(i))
+        print(model)
 
+    print()
+    print("Combine mental models...")
     possible_models = reduce(lambda model1, model2: combine_mental_models(model1, model2, atom_index_mapping_all, all_atoms_in_all_models), resized_mental_models)
     return mental_model(tuple(model.expr for model in models), possible_models, all_atoms_in_all_models, atom_index_mapping_all)
 

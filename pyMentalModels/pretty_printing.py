@@ -1,25 +1,28 @@
 #!/usr/bin/python3
 
-EXPL_NEG = -2
-POS_VAL = +2
+from pyMentalModels.constants import EXPL_NEG
 
 
-def pretty_print_atom_assign(atoms, atom_assignment, mode="intuitive", output="str"):
+def pretty_print_atom_assign(atom_assignment, atoms, mode="intuitive", output="str"):
     """
         Returns a string representation of the atoms
-        Atom. Assignment 0 --> "¬atom" if explicit else " "
-        Atom. Assignment -POS_VAL --> "¬atom" always
+        Atom. Assignment IMPL_NEG --> "¬atom" if explicit else " "
+        Atom. Assignment EXPL_NEG --> "¬atom" always
         Atom. Assignment POS_VAL --> "atom"
 
         Parameters
         ----------
         atoms: List,
             Literals/Atoms of the logical expression i.e. the column labels for the model
-        atom_assignment: Either POS_VAL, 0, -POS_VAL
+        atom_assignment: Either EXPL_NEG, POS_VAL, IMPL_NEG
+
             Assignment of the Atoms in the model.
         mode: str, optional
             default is "intuitive" choices are "intuitive", "explicit"
-        output: str
+
+        Returns
+        -------
+        output: [List, str]
             can be either "list" or "str"
 
     """

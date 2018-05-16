@@ -10,6 +10,7 @@ import logging
 
 from pyMentalModels.mental_model import mental_model
 from pyMentalModels.custom_logical_classes import Necessary, Possibly
+from pyMentalModels.constants import EXPL_NEG, POS_VAL, IMPL_NEG
 
 
 #######################################################################
@@ -90,7 +91,7 @@ Examples of this behaviour would be:
                             |                            |  C
     ~A                      |   A       ~C  ~D <-- from  |      D
         B                   |       B   ~C  ~D           |  C   D
-    ~A  B                   |This does look probelmatic.
+    ~A  B                   |
 
 Hence, an explicit `Not` in the expression will lead to an explicit `Not`
 representation in the final model.
@@ -106,12 +107,6 @@ class Insight(Enum):
     """Enum for the diferent insight modes intuitive and full"""
     INTUITIVE = 0
     FULL = 1
-
-
-""" WARNING the merge and function is highly dependend on the choice of POS_VAL IMPL_NEG and EXPL_NEG"""
-POS_VAL = 2
-IMPL_NEG = -1
-EXPL_NEG = -2
 
 
 #######################################################################
@@ -196,11 +191,12 @@ def map_instance_to_operation(el):
         (Implies, build_implication),
         (Equivalent, build_and),
         (Not, build_not),
-        (Symbol, lambda *_: np.array([[POS_VAL]])),
         (Necessary, build_necessary),
-        (Possibly, build_possibly)
+        (Possibly, build_possibly),
+        (Symbol, lambda *_: np.array([[POS_VAL]])),
     ))
     try:
+        print(el)
         return next(builder for type_, builder in maps if isinstance(el, type_))
     except StopIteration:
         raise ValueError("Not a valid operator")
@@ -503,9 +499,28 @@ def build_not(exp, atom_index_mapping, exp_atoms):
 def build_necessary(exp, atom_index_mapping, exp_atoms):
     """
     Builds model of `necessary` expression
-    """
-    assert isinstance(exp, Necessary)
-    """
+
+    1. Models represent possibilities (J-L & Byrne, 1991)
+
+    2. Compounds of alternatives refer by default to exhaustive conjunctions of
+    possibilities, e.g.: A or else B, but not both
+    has two mental models (system 1):
+    A
+        B
+    (J-L, Khemlani, & Goodwin, 2015.)
+
+    Fully explicit models (system 2) also represent what’s impossible.
+
+    3. A conjunction, A and B, makes a factual claim: both propositions hold in
+    all possibilities.
+
+    4. Parsimony: possible that A and possible that B has a mental model of a
+    single possibility:
+
+    A   B
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     (2) Necessary
     The problem is that the truth value of A does not determine the truth value for []A. For example, when A is ‘Dogs are dogs’, []A is true, but when A is ‘Dogs are pets’, []A is false
 
@@ -522,6 +537,11 @@ def build_necessary(exp, atom_index_mapping, exp_atoms):
 
     Furthermore, [](A&B) entails []A&[]B and vice versa; while []A|[]B entails [](A|B), but not vice versa. This reflects the patterns exhibited by the universal quantifier: ∀x(A&B) entails ∀xA&∀xB and vice versa, while ∀xA ∨ ∀xB entails ∀x(A ∨ B) but not vice versa
 """
+    assert isinstance(exp, Necessary)
+    # necessary
+    # necessar -- AND
+    # possible -- OR
+    return map_instance_to_operation(exp.args[0])(exp.args[0], atom_index_mapping, exp_atoms)
 
 
 def build_possibly(exp, atom_index_mapping, exp_atoms):
@@ -529,7 +549,7 @@ def build_possibly(exp, atom_index_mapping, exp_atoms):
     Builds model of `possibly` expression
     """
     assert isinstance(exp, Possibly)
-
+    return map_instance_to_operation(exp.args[0])(exp.args[0], atom_index_mapping, exp_atoms)
 
 #######################################################################
 #         functions that work directly on np.ndarray models           #
@@ -599,11 +619,11 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
                         continue
                     allowed_models = np.stack(allowed_models)
                     reshaped_submodel = np.repeat(np.atleast_2d(submodel), len(allowed_models), axis=0)
-                    print("LENGTH ALLOWD", len(allowed_models))
-                    print("Sub", submodel)
-                    print("reshaped", reshaped_submodel)
-                    print(allowed_models)
-                    logging.debug("Reshaped submodel:", reshaped_submodel)
+                    logging.debug("LENGTH ALLOWD: {}".format(len(allowed_models)))
+                    logging.debug("Sub: {}".format(submodel))
+                    logging.debug("reshaped: {}".format(reshaped_submodel))
+                    logging.debug("{}".format(allowed_models))
+                    logging.debug("Reshaped submodel: {}".format(reshaped_submodel))
                     submodel_added_with_allowed_models = reshaped_submodel + allowed_models
                     # after adding values can either be 2, -2 , -3 or -4 for the indexes that are active in both models
                     # for the other indices values are 0, -1, -2 or 1
@@ -623,7 +643,7 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
                     for sub_model in iter_models:
                         merged_models = np.vstack((merged_models, sub_model))
                 else:
-                    print("AND yields the empty array")
+                    logging.info("AND yields the empty array")
                     return np.array([[]])
             else:
                 reshaped_merged_models = np.repeat(merged_models, len(model), axis=0)

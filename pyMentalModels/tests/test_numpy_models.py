@@ -234,8 +234,10 @@ test_premise_pairings = [
     ["A | B", "A ^ B"],                      # 24 [consistent] probability of 2/3
 ]
 
+
 def test_reasoning():
     pass
+
 
 if __name__ == "__main__":
     unittest.main()
