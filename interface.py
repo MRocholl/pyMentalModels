@@ -12,9 +12,6 @@ import argparse
 import logging
 
 
-from enum import Enum
-
-
 def main(args):
     rules = intuit_op if args.mode == Insight.INTUITIVE else explicit_op
 
@@ -58,14 +55,21 @@ if __name__ == "__main__":
     parser.add_argument("expression", help="Expressions to be parsed, separated by comma. i.e. 'A, A -> B'")
     parser.add_argument("-m", "--mode", choices=["intuitive", "explicit"], default="intuitive", help="Can be either intuitive or explicit")
     parser.add_argument("-v", "--verbose", choices=["INFO", "DEBUG"], default="INFO", help="Level of verbosity to set for the program")
-    parser.add_argument("-i", "--infer", choices=["consistency"], default="consistency", help="Chose what to check the mental modles for. Choices are 1. consistency, 2. ...")
+    parser.add_argument("-i", "--infer", choices=["what_follows?", "what_follows?", "necessary?", "possible?", "probability?", "verify?"], help="""\
+            Choose what to check the mental models for.
+            Choices are:
+                1. what_follows?,
+                2. necessary?,
+                3. possible?,
+                4. probability?,
+                5. verify?
+            Otherwise just builds model of each premise
+            """)
 
     args, unknowns = parser.parse_known_args()
 
     args.infer = InferenceTask(args.infer)
     args.mode = Insight(args.mode)
-
-
 
     log_lvl = logging.INFO if args.verbose == 'INFO' else logging.DEBUG
     logging.basicConfig(level=log_lvl)

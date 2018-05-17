@@ -16,7 +16,11 @@ from enum import Enum
 
 
 class InferenceTask(Enum):
-    CONSISTENCY = "consistency"
+    FOLLOWS = "what_follows?"
+    NECESSARY = "necessary?"
+    POSSIBLE = "possible?"
+    PROBABILITY = "probability?"
+    VERIFY = "verify?"
 
 
 def combine_mental_models(model1, model2, atom_index_mapping, exp_atoms):
@@ -120,7 +124,7 @@ def resize_model(model, atom_index_mapping_all, all_atoms_in_all_models):
     return resized_mental_model
 
 
-def infer(models: List, task="infer"):
+def infer(models: List, task: InferenceTask):
     """
     Parameters
     ----------
@@ -130,6 +134,21 @@ def infer(models: List, task="infer"):
             model: The resulting mental model representation (np.ndarry)
             atoms_model: list of atoms in the expression (list)
             atom_index_mapping: mapping of atoms to their column in `model` (Dict)
+    task: InferenceTask
+            One of the InferenceTask.values:
+                1. what_follows?:
+                    Set task: Infer what follows from all premises
+                2. necessary?:
+                    Set task: Given all but last premises, infer if last premise necessarily follows
+                3. possible?:
+                    Set task: Given all but last premises, infer if last premise possibly follows
+                4. probability?:
+                    Set task: Given all but last premises, infer the probability of last premis
+                5. verify?:
+                    Set task: Given evidence last premise, verify all but last
+                6. Otherwise
+                    No task specified and so builds models of all the premises
+
     Returns
     -------
         if "infer":
