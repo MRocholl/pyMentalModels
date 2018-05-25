@@ -2,10 +2,8 @@
 # -*- coding: iso-8859-15 -*-
 
 from sympy import sympify
-from typing import List, Dict
-
+from typing import List
 from pyMentalModels.custom_logical_classes import Necessary, Possibly
-
 
 
 def parse_expr(expression):
@@ -66,10 +64,10 @@ def sympify_formatter(args: List):
         return "{}".format(args)
     elif len(args) == 2:
         op, arg = args
-        return "{}({})".format(rules[op], sympify_formatter(arg, rules))
+        return "{}({})".format(rules[op], sympify_formatter(arg))
     elif len(args) >= 3:
         op = rules[args[1]]
-        arguments = (sympify_formatter(expr, rules) for expr in args[::2])
+        arguments = (sympify_formatter(expr) for expr in args[::2])
         # Sympify takes general form of Operator(#args > 2)
         return "{operator}({f_args})".format(operator=op,
                                              f_args=", ".join(arguments))
@@ -77,9 +75,9 @@ def sympify_formatter(args: List):
         raise ValueError("Args cannot be empty list")
 
 
-def parse_format(expression: str, rules: Dict[str, str]):
+def parse_format(expression: str):
     """
     Short function to both parse and format an expression and return a sympy object
     """
     parsed_expression = parse_expr(expression)
-    return sympify(sympify_formatter(parsed_expression, rules), locals={"Necessary": Necessary, "Possibly": Possibly})
+    return sympify(sympify_formatter(parsed_expression), locals={"Necessary": Necessary, "Possibly": Possibly})

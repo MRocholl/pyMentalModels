@@ -2,7 +2,6 @@
 # -*- coding: iso-8859-15 -*-
 
 from pyMentalModels.modal_parser import parse_format
-from pyMentalModels.operators import intuit_op, explicit_op
 from pyMentalModels.numpy_reasoner import mental_model_builder, Insight
 from pyMentalModels.pretty_printing import pretty_print_atom_assign
 from pyMentalModels.infer import infer, InferenceTask
@@ -13,12 +12,10 @@ import logging
 
 
 def main(args):
-    rules = intuit_op if args.mode == Insight.INTUITIVE else explicit_op
-
     expressions_to_parse = args.expression.split(", ")
 
     sympified_expressions = [
-        parse_format(expr, rules=rules)
+        parse_format(expr)
         for expr in expressions_to_parse
     ]
     print("The following expressions have been parsed:")
@@ -28,7 +25,7 @@ def main(args):
     models = []
     for sympified_expression in sympified_expressions:
         print("The expression to be evaluated is: {}".format(sympified_expression))
-        model = mental_model_builder(sympified_expression)
+        model = mental_model_builder(sympified_expression, args.mode)
         logging.debug("{}".format(model))
         models.append(model)
         print("The mental model that has been created is:")
