@@ -29,7 +29,7 @@ def pretty_print_atom_assign(atom_assignment, atoms, mode="intuitive", output="s
     assert mode in Insight, "Provided invalid argument for `mode`"
     assert output in ("list", "str"), "Provided invalid argument for `mode`"
 
-    if mode == "intuitive":
+    if mode == Insight.INTUITIVE:
         list_repr = [" {}".format(atom) if value > 0 else "¬{}".format(atom) if value == EXPL_NEG else "  " for atom, value in zip(atoms, atom_assignment)]
     else:
         list_repr = [" {}".format(atom) if value > 0 else "¬{}".format(atom) if value < 0 else "  " for atom, value in zip(atoms, atom_assignment)]

@@ -170,8 +170,8 @@ def infer(models: List, task: InferenceTask):
     ]
 
     for i, model in enumerate(resized_mental_models):
-        logging.debug("The {}th model is: {}".format(i, model))
-        print("The {}th model is:".format(i))
+        logging.debug("The {}th model is: {}".format(i + 1, model))
+        print("The {}th model is:".format(i + 1))
         print(model)
 
     print()

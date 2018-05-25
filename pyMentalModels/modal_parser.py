@@ -7,6 +7,7 @@ from typing import List, Dict
 from pyMentalModels.custom_logical_classes import Necessary, Possibly
 
 
+
 def parse_expr(expression):
     """
     Parses expression and returns a list
@@ -35,7 +36,7 @@ def parse_expr(expression):
     return expr.parseString(expression)[0]
 
 
-def sympify_formatter(args: List, rules: Dict[str, str]):
+def sympify_formatter(args: List):
     """
     Formatting function to make the parsed list sympify-readable
     For sympify refer to:  http://docs.sympy.org/latest/modules/core.html
@@ -44,13 +45,23 @@ def sympify_formatter(args: List, rules: Dict[str, str]):
     args: List[str]
         List of Lists with logical expressions
 
-    rules: Dict[str, str]
-        Dict that maps each logical operator to its sympify readable counterpart
-
     Returns
     -------
         Sympify ready formatted str of the original expression
     """
+
+    # Default operator name mapping
+    rules = {
+        '[]': "Necessary",
+        '<>': "Possibly",
+        '~': "Not",
+        '|': "Or",
+        '&': "And",
+        '->': "Implies",
+        '<->': "Equivalent",
+        '^': "Xor",
+    }
+
     if len(args) == 1 or isinstance(args, str):
         return "{}".format(args)
     elif len(args) == 2:

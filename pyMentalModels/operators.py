@@ -2,21 +2,13 @@
 # -*- coding: iso-8859-15 -*-
 
 
-""" Default operator name mapping """
 
-explicit_op = {
-    '[]': "Necessary",
-    '<>': "Possibly",
-    '~': "Not",
-    '|': "Or",
-    '&': "And",
-    '->': "Implies",
-    '<->': "Equivalent",
-    '^': "Xor",
-}
 
 
 """ Operators to be used when building fast model """
+
+# XXX `Or` might be mapped to Xor in case of an intuitive model
+# XXX
 
 intuit_op = {
     '[]': "Necessary",

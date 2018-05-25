@@ -31,6 +31,10 @@ from pyMentalModels.constants import EXPL_NEG, POS_VAL, IMPL_NEG
 # --------------------------|-------------------------|--------------------------------
 # Neither A nor B           |      ~A  ~B             |             ~A  ~B
 # --------------------------|-------------------------|--------------------------------
+# XXX Difference between    |                         |
+# XXX Or and XOR maybe not  |                         |
+# XXX Clear                 |                         |
+#                           |                         |
 # A or else B, but not both |       A                 |              A  ~B
 #                           |           B             |             ~A   B
 # --------------------------|-------------------------|--------------------------------
@@ -109,12 +113,28 @@ class Insight(Enum):
     EXPLICIT = "explicit"
 
 
+
+
+
+#######################################################################
+#   Functions to introduce probabilistic behavior for Insight Level   #
+#######################################################################
+
+
+def probability_intuititive_explicit(mode, depth, depth_threshold=4):
+    if mode == Insight.INTUITIVE:
+        return Insight.INTUITIVE
+    else:
+        # Dependent on the recursion depth change mode of Insight.
+        # XXX Set level to 4 for now ....
+        return Insight.INTUITIVE if depth <= depth_threshold else Insight.EXPLICIT
+
 #######################################################################
 #                Main Function `mental_model_builder`                 #
 #######################################################################
 
 
-def mental_model_builder(sympified_expr, mode=Insight.INTUITIVE):
+def mental_model_builder(sympified_expr, mode):
     """
     Builds a mental model representation of the logical expression.
 
@@ -179,22 +199,39 @@ def mental_model_builder(sympified_expr, mode=Insight.INTUITIVE):
     # map every atom to its corresponding index in the model
     atom_index_mapping = {atom: i for i, atom in enumerate(exp_atoms)}
 
-    return mental_model(sympified_expr, map_instance_to_operation(sympified_expr)(sympified_expr, atom_index_mapping, exp_atoms), exp_atoms, atom_index_mapping)
+    return mental_model(sympified_expr, map_instance_to_operation(sympified_expr, mode)(sympified_expr, atom_index_mapping, exp_atoms, mode), exp_atoms, atom_index_mapping)
 
 
-def map_instance_to_operation(el):
+def map_instance_to_operation(el, mode):
     "maps every logical instance to its builder function."
-    maps = iter((
+    inst_op_mapping_explicit = (
         (Or, build_or),
         (And, build_and),
         (Xor, build_xor),
         (Implies, build_implication),
+        (Equivalent, build_equals),
+        (Not, build_not),
+        (Necessary, build_necessary),
+        (Possibly, build_possibly),
+        (Symbol, lambda *_: np.array([[POS_VAL]])),
+    )
+    inst_op_mapping_implicit = (
+        (Or, build_or),
+        (And, build_and),
+        (Xor, build_xor),  # XXX Maybe change this to `Or`
+        (Implies, build_and),
         (Equivalent, build_and),
         (Not, build_not),
         (Necessary, build_necessary),
         (Possibly, build_possibly),
         (Symbol, lambda *_: np.array([[POS_VAL]])),
-    ))
+    )
+    if mode == Insight.INTUITIVE:
+        maps = iter(inst_op_mapping_implicit)
+    elif mode == Insight.EXPLICIT:
+        maps = iter(inst_op_mapping_explicit)
+    else:
+        raise ValueError("Not a valid Insight `mode`")
     try:
         return next(builder for type_, builder in maps if isinstance(el, type_))
     except StopIteration:
@@ -205,7 +242,7 @@ def map_instance_to_operation(el):
 #######################################################################
 
 
-def build_or(exp, atom_index_mapping, exp_atoms):
+def build_or(exp, atom_index_mapping, exp_atoms, mode):
     """
     Builds model of `Or` expression.
 
@@ -248,7 +285,7 @@ def build_or(exp, atom_index_mapping, exp_atoms):
 
         # generate submodels from subexpressions
         modelized_subexpressions = [
-            map_instance_to_operation(subexpression)(subexpression, atom_index_mapping, exp_atoms)
+            map_instance_to_operation(subexpression, mode)(subexpression, atom_index_mapping, exp_atoms, mode)
             for subexpression in subexpression_list
         ]
 
@@ -267,7 +304,7 @@ def build_or(exp, atom_index_mapping, exp_atoms):
         return np.unique(merged_sub_models, axis=0)
 
 
-def build_and(exp, atom_index_mapping, exp_atoms):
+def build_and(exp, atom_index_mapping, exp_atoms, mode):
 
     assert(isinstance(exp, (And, Implies, Equivalent)))
 
@@ -289,7 +326,7 @@ def build_and(exp, atom_index_mapping, exp_atoms):
                 subexpression_list.append(el)
         # generate submodels from subexpressions
         modelized_subexpressions = [
-            map_instance_to_operation(subexpression)(subexpression, atom_index_mapping, exp_atoms)
+            map_instance_to_operation(subexpression, mode)(subexpression, atom_index_mapping, exp_atoms, mode)
             for subexpression in subexpression_list
         ]
         # Create `and` model for the symbols
@@ -308,7 +345,7 @@ def build_and(exp, atom_index_mapping, exp_atoms):
             return merged_sub_models
 
 
-def build_xor(exp, atom_index_mapping, exp_atoms):
+def build_xor(exp, atom_index_mapping, exp_atoms, mode):
 
     assert(isinstance(exp, Xor))
 
@@ -318,9 +355,7 @@ def build_xor(exp, atom_index_mapping, exp_atoms):
     if all(isinstance(el, Symbol) for el in exp.args):
         xor_model = np.zeros((nr_xor_args, len(exp_atoms)))
         all_combinations = np.eye(nr_xor_args) * POS_VAL
-        print(all_combinations)
         all_combinations[np.where(all_combinations != POS_VAL)] = IMPL_NEG
-        print(all_combinations)
         xor_model[
             :, list(map(lambda x: atom_index_mapping[x], xor_args))
         ] = all_combinations
@@ -355,7 +390,7 @@ def build_xor(exp, atom_index_mapping, exp_atoms):
         return np.unique(merged_sub_models, axis=0)
 
 
-def build_implication(exp, atom_index_mapping, exp_atoms, mode=Insight.INTUITIVE):
+def build_implication(exp, atom_index_mapping, exp_atoms, mode):
     """
     Builds numpy representation of implication
 
@@ -415,7 +450,7 @@ def build_implication(exp, atom_index_mapping, exp_atoms, mode=Insight.INTUITIVE
         return np.unique(merged_sub_models, axis=0)
 
 
-def build_equals(exp, atom_index_mapping, exp_atoms, mode=Insight.INTUITIVE):
+def build_equals(exp, atom_index_mapping, exp_atoms, mode):
     """
     Builds numpy representation of implication
 
@@ -475,7 +510,7 @@ def build_equals(exp, atom_index_mapping, exp_atoms, mode=Insight.INTUITIVE):
         return np.unique(merged_sub_models, axis=0)
 
 
-def build_not(exp, atom_index_mapping, exp_atoms):
+def build_not(exp, atom_index_mapping, exp_atoms, mode):
     """
     Builds model of expression with outer-most argument being Not
     """
@@ -490,12 +525,12 @@ def build_not(exp, atom_index_mapping, exp_atoms):
     else:
         # First build model of the model to be negated
         # then get the complement of that model and return it
-        model_positive = map_instance_to_operation(neg_arg)(neg_arg, atom_index_mapping, exp_atoms)
+        model_positive = map_instance_to_operation(neg_arg, mode)(neg_arg, atom_index_mapping, exp_atoms, mode)
         neg_model = _complement_array_model(model_positive, atom_index_mapping, exp_atoms)
         return neg_model
 
 
-def build_necessary(exp, atom_index_mapping, exp_atoms):
+def build_necessary(exp, atom_index_mapping, exp_atoms, mode):
     """
     Builds model of `necessary` expression
 
@@ -543,12 +578,12 @@ def build_necessary(exp, atom_index_mapping, exp_atoms):
     return map_instance_to_operation(exp.args[0])(exp.args[0], atom_index_mapping, exp_atoms)
 
 
-def build_possibly(exp, atom_index_mapping, exp_atoms):
+def build_possibly(exp, atom_index_mapping, exp_atoms, mode):
     """
     Builds model of `possibly` expression
     """
     assert isinstance(exp, Possibly)
-    return map_instance_to_operation(exp.args[0])(exp.args[0], atom_index_mapping, exp_atoms)
+    return map_instance_to_operation(exp.args[0], mode)(exp.args[0], atom_index_mapping, exp_atoms, mode)
 
 #######################################################################
 #         functions that work directly on np.ndarray models           #
@@ -627,8 +662,15 @@ def _merge_models(*sub_models, atom_index_mapping, exp_atoms, op):
                     # after adding values can either be 2, -2 , -3 or -4 for the indexes that are active in both models
                     # for the other indices values are 0, -1, -2 or 1
                     # for the active indices map 2, -2, -3 and -4 to 1, -1, -2
-                    submodel_added_with_allowed_models[:, atom_indices_to_check] //= 2
-                    # XXX GET rri of div by 2
+                    submodel_added_with_allowed_models[submodel_added_with_allowed_models[:, atom_indices_to_check] == POS_VAL + POS_VAL] = POS_VAL
+                    submodel_added_with_allowed_models[submodel_added_with_allowed_models[:, atom_indices_to_check] == IMPL_NEG + IMPL_NEG] = IMPL_NEG
+                    submodel_added_with_allowed_models[submodel_added_with_allowed_models[:, atom_indices_to_check] == EXPL_NEG + IMPL_NEG] = EXPL_NEG
+                    submodel_added_with_allowed_models[submodel_added_with_allowed_models[:, atom_indices_to_check] == EXPL_NEG + EXPL_NEG] = EXPL_NEG
+
+
+
+
+                    # XXX GET rid of div by 2
                     logging.debug("added submodel with allowed model", submodel_added_with_allowed_models)
                     sub_models_merged_model.append(submodel_added_with_allowed_models)
                     logging.debug("List of valid submodels until now:", sub_models_merged_model)
@@ -801,6 +843,9 @@ def _complement_array_model(model, atom_index_mapping, exp_atoms):
     set_model = {tuple(el) for el in model_copy}
     complement_as_set = set_all_possible_models.difference(set_model)
     return np.array(sorted(complement_as_set, key=_increasing_ones_first_sort))
+
+
+
 
 
 def _increasing_ones_first_sort(array_slice):
