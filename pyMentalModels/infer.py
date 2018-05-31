@@ -21,6 +21,19 @@ class InferenceTask(Enum):
     POSSIBLE = "possible?"
     PROBABILITY = "probability?"
     VERIFY = "verify?"
+    ONLY_MODELS = "only_models"
+
+
+def normalize_combined_model_values(model):
+    # after adding values can either be 2, -2 , -3 or -4 for the indexes that are active in both models
+    # for the other indices values are 0, -1, -2 or 1
+    # for the active indices map 4, -2, -3 and -4 to 1, -1, -2
+    model[model == POS_VAL + POS_VAL] = POS_VAL
+    model[model == POS_VAL + IMPL_NEG] = POS_VAL
+    model[model == IMPL_NEG + IMPL_NEG] = IMPL_NEG
+    model[model == EXPL_NEG + IMPL_NEG] = EXPL_NEG
+    model[model == EXPL_NEG + EXPL_NEG] = EXPL_NEG
+    return model
 
 
 def combine_mental_models(model1, model2, atom_index_mapping, exp_atoms):
@@ -71,11 +84,7 @@ def combine_mental_models(model1, model2, atom_index_mapping, exp_atoms):
             # after adding values can either be 2, -2 , -3 or -4 for the indexes that are active in both models
             # for the other indices values are 0, -1, -2 or 1
             # for the active indices map 4, -2, -3 and -4 to 1, -1, -2
-            submodel_added_with_allowed_models[submodel_added_with_allowed_models == POS_VAL + POS_VAL] = POS_VAL
-            submodel_added_with_allowed_models[submodel_added_with_allowed_models == POS_VAL + IMPL_NEG] = POS_VAL
-            submodel_added_with_allowed_models[submodel_added_with_allowed_models == IMPL_NEG + IMPL_NEG] = IMPL_NEG
-            submodel_added_with_allowed_models[submodel_added_with_allowed_models == EXPL_NEG + IMPL_NEG] = EXPL_NEG
-            submodel_added_with_allowed_models[submodel_added_with_allowed_models == EXPL_NEG + EXPL_NEG] = EXPL_NEG
+            submodel_added_with_allowed_models = normalize_combined_model_values(submodel_added_with_allowed_models)
             logging.debug("added submodel with allowed model", submodel_added_with_allowed_models)
             sub_models_merged_model.append(submodel_added_with_allowed_models)
             logging.debug("List of valid submodels until now:", sub_models_merged_model)
@@ -146,13 +155,12 @@ def infer(models: List, task: InferenceTask):
                     Set task: Given all but last premises, infer the probability of last premis
                 5. verify?:
                     Set task: Given evidence last premise, verify all but last
-                6. Otherwise
-                    No task specified and so builds models of all the premises
+                6. only_models
+                    Builds models of all the premises
 
     Returns
     -------
-        if "infer":
-            Infer a conclusion based on the premises
+        Returns a conclusion or inference of sort.
 
     """
     print()
@@ -174,10 +182,52 @@ def infer(models: List, task: InferenceTask):
         print("The {}th model is:".format(i + 1))
         print(model)
 
+    if task == InferenceTask.ONLY_MODELS:
+        return
+
+    if task == InferenceTask.FOLLOWS:
+        print()
+        print("Combine mental models...")
+        possible_models = reduce(lambda model1, model2: combine_mental_models(model1, model2, atom_index_mapping_all, all_atoms_in_all_models), resized_mental_models)
+        return mental_model(tuple(model.expr for model in models), possible_models, all_atoms_in_all_models, atom_index_mapping_all)
+
+    # all the other modes separate the last expression from the first n-1
+    *all_but_last_models, last_model = resized_mental_models
+
+    # possible models given the first n-1 premises
     print()
-    print("Combine mental models...")
-    possible_models = reduce(lambda model1, model2: combine_mental_models(model1, model2, atom_index_mapping_all, all_atoms_in_all_models), resized_mental_models)
-    return mental_model(tuple(model.expr for model in models), possible_models, all_atoms_in_all_models, atom_index_mapping_all)
+    print("Combine all but last mental models...")
+    possible_models = reduce(lambda model1, model2: combine_mental_models(model1, model2, atom_index_mapping_all, all_atoms_in_all_models), all_but_last_models)
+
+    if task == InferenceTask.NECESSARY:
+        raise NotImplementedError("Will return wether last premise necessarily follows from previous")
+    if not last_model.shape[0] == 1:
+        raise ValueError("The last premise should be a simple one that yields a single possible model")
+        necessary_atoms = np.all(possible_models == possible_models[0, :], axis=0)
+        last_model_active_indices = last_model.all(axis=0)
+        necessary_atoms[:, last_model_active_indices == ]
+
+
+
+
+        return mental_model(tuple(model.expr for model in models), possible_models, all_atoms_in_all_models, atom_index_mapping_all)
+
+    if task == InferenceTask.POSSIBLE:
+        raise NotImplementedError("Will return wether last premise possibly follows from previous")
+        return mental_model(tuple(model.expr for model in models), possible_models, all_atoms_in_all_models, atom_index_mapping_all)
+
+    if task == InferenceTask.PROBABILITY:
+        raise NotImplementedError("Future work...")
+        print()
+        print("Combine mental models...")
+        return mental_model(tuple(model.expr for model in models), possible_models, all_atoms_in_all_models, atom_index_mapping_all)
+
+    if task == InferenceTask.VERIFY:
+        raise NotImplementedError("")
+        print()
+        print("Combine mental models...")
+        possible_models = reduce(lambda model1, model2: combine_mental_models(model1, model2, atom_index_mapping_all, all_atoms_in_all_models), resized_mental_models)
+        return mental_model(tuple(model.expr for model in models), possible_models, all_atoms_in_all_models, atom_index_mapping_all)
 
 
 """

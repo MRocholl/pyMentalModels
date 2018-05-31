@@ -8,6 +8,7 @@ from pyMentalModels.infer import infer, InferenceTask
 
 
 import argparse
+import textwrap
 import logging
 
 
@@ -48,20 +49,28 @@ if __name__ == "__main__":
     This is an implementation of a Mental Model theory based Reasoner.
     """
 
-    parser = argparse.ArgumentParser(prog="pyMentalModel Reasoner", description=description)
+    parser = argparse.ArgumentParser(prog="pyMentalModel Reasoner",
+                                     formatter_class=argparse.RawTextHelpFormatter,
+                                     description=description)
     parser.add_argument("expression", help="Expressions to be parsed, separated by comma. i.e. 'A, A -> B'")
     parser.add_argument("-m", "--mode", choices=["intuitive", "explicit"], default="intuitive", help="Can be either intuitive or explicit")
     parser.add_argument("-v", "--verbose", choices=["INFO", "DEBUG"], default="INFO", help="Level of verbosity to set for the program")
-    parser.add_argument("-i", "--infer", choices=["what_follows?", "what_follows?", "necessary?", "possible?", "probability?", "verify?"], help="""\
+    parser.add_argument("-i", "--infer", choices=["what_follows?", "what_follows?", "necessary?", "possible?", "probability?", "verify?", "only_models"], help=textwrap.dedent("""\
             Choose what to check the mental models for.
             Choices are:
-                1. what_follows?,
-                2. necessary?,
-                3. possible?,
-                4. probability?,
-                5. verify?
-            Otherwise just builds model of each premise
-            """)
+                1. what_follows?:
+                    Set task: Infer what follows from all premises
+                2. necessary?:
+                    Set task: Given all but last premises, infer if last premise necessarily follows
+                3. possible?:
+                    Set task: Given all but last premises, infer if last premise possibly follows
+                4. probability?:
+                    Set task: Given all but last premises, infer the probability of last premis
+                5. verify?:
+                    Set task: Given evidence last premise, verify all but last
+                6. only_models:
+                    No task specified and so builds models of all the premises
+            """))
 
     args, unknowns = parser.parse_known_args()
 
