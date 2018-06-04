@@ -668,19 +668,11 @@ def _merge_and(*sub_models, atom_index_mapping, exp_atoms):
                 # for the active indices map 2, -2, -3 and -4 to 1, -1, -2
 
                 # XXX Fixed this had - prior behavuir was simple div by 2
-                print("++++++++++++++++++++++++++++++++++++++++++++")
-                print(submodel_added_with_allowed_models)
 
                 submodel_added_with_allowed_models[submodel_added_with_allowed_models == POS_VAL + POS_VAL] = POS_VAL
-                print(submodel_added_with_allowed_models)
-                submodel_added_with_allowed_models[submodel_added_with_allowed_models == POS_VAL + POS_VAL] = POS_VAL  # 4 becomes 2 XXX THIS TOTALLY BREAKS!!!!
-                print(submodel_added_with_allowed_models)
-                submodel_added_with_allowed_models[submodel_added_with_allowed_models == IMPL_NEG + IMPL_NEG] = IMPL_NEG  # -2 becomes -1
-                print(submodel_added_with_allowed_models)
-                submodel_added_with_allowed_models[submodel_added_with_allowed_models == EXPL_NEG + IMPL_NEG] = EXPL_NEG  # -3 becomes -2
-                print(submodel_added_with_allowed_models)
-                submodel_added_with_allowed_models[submodel_added_with_allowed_models == EXPL_NEG + EXPL_NEG] = EXPL_NEG  # -4 beecomes -2
-                print(submodel_added_with_allowed_models)
+                submodel_added_with_allowed_models[submodel_added_with_allowed_models == IMPL_NEG + IMPL_NEG] = IMPL_NEG
+                submodel_added_with_allowed_models[submodel_added_with_allowed_models == EXPL_NEG + IMPL_NEG] = EXPL_NEG
+                submodel_added_with_allowed_models[submodel_added_with_allowed_models == EXPL_NEG + EXPL_NEG] = EXPL_NEG
 
                 logging.debug("added submodel with allowed model {}".format(submodel_added_with_allowed_models))
                 sub_models_merged_model.append(submodel_added_with_allowed_models)
