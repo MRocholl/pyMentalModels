@@ -356,7 +356,6 @@ def build_xor(exp, atom_index_mapping, exp_atoms, mode):
         xor_model[
             :, list(map(lambda x: atom_index_mapping[x], xor_args))
         ] = all_combinations
-        print(xor_model)
         return xor_model
     else:
         symbol_list = []
@@ -642,32 +641,50 @@ def _merge_and(*sub_models, atom_index_mapping, exp_atoms):
             for submodel in merged_models:
                 allowed_models = []
                 for sub_model_to_check in model:
+                    print("######################################")
+                    print(submodel)
+                    print(sub_model_to_check)
+                    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
                     if all(same_val(*vals) for vals in zip(submodel[atom_indices_to_check], sub_model_to_check[atom_indices_to_check])):
+                        print("ACCEPTED")
                         allowed_models.append(sub_model_to_check)
                 logging.debug("Allowed models are: {}".format(allowed_models))
                 if not allowed_models:
+                    logging.debug("No allowed submodels")
                     continue
-                allowed_models = np.stack(allowed_models)
+                elif len(allowed_models) >= 2:
+                    allowed_models = np.stack(allowed_models)
+                else:
+                    allowed_models = np.atleast_2d(allowed_models)
                 reshaped_submodel = np.repeat(np.atleast_2d(submodel), len(allowed_models), axis=0)
-                logging.debug("LENGTH ALLOWED: {}".format(len(allowed_models)))
-                logging.debug("Sub: {}".format(submodel))
-                logging.debug("reshaped: {}".format(reshaped_submodel))
-                logging.debug("{}".format(allowed_models))
-                logging.debug("Reshaped submodel: {}".format(reshaped_submodel))
+                # logging.debug("Number of  ALLOWED models: {}".format(len(allowed_models)))
+                # logging.debug("Sub: {}".format(submodel))
+                # logging.debug("reshaped: {}".format(reshaped_submodel))
+                # logging.debug("{}".format(allowed_models))
+                # logging.debug("Reshaped submodel: {}".format(reshaped_submodel))
                 submodel_added_with_allowed_models = reshaped_submodel + allowed_models
                 # after adding values can either be 2, -2 , -3 or -4 for the indexes that are active in both models
                 # for the other indices values are 0, -1, -2 or 1
                 # for the active indices map 2, -2, -3 and -4 to 1, -1, -2
 
                 # XXX Fixed this had - prior behavuir was simple div by 2
-                submodel_added_with_allowed_models[submodel_added_with_allowed_models[:, atom_indices_to_check] == POS_VAL + POS_VAL] = POS_VAL
-                submodel_added_with_allowed_models[submodel_added_with_allowed_models[:, atom_indices_to_check] == IMPL_NEG + IMPL_NEG] = IMPL_NEG
-                submodel_added_with_allowed_models[submodel_added_with_allowed_models[:, atom_indices_to_check] == EXPL_NEG + IMPL_NEG] = EXPL_NEG
-                submodel_added_with_allowed_models[submodel_added_with_allowed_models[:, atom_indices_to_check] == EXPL_NEG + EXPL_NEG] = EXPL_NEG
+                print("++++++++++++++++++++++++++++++++++++++++++++")
+                print(submodel_added_with_allowed_models)
 
-                logging.debug("added submodel with allowed model", submodel_added_with_allowed_models)
+                submodel_added_with_allowed_models[submodel_added_with_allowed_models == POS_VAL + POS_VAL] = POS_VAL
+                print(submodel_added_with_allowed_models)
+                submodel_added_with_allowed_models[submodel_added_with_allowed_models == POS_VAL + POS_VAL] = POS_VAL  # 4 becomes 2 XXX THIS TOTALLY BREAKS!!!!
+                print(submodel_added_with_allowed_models)
+                submodel_added_with_allowed_models[submodel_added_with_allowed_models == IMPL_NEG + IMPL_NEG] = IMPL_NEG  # -2 becomes -1
+                print(submodel_added_with_allowed_models)
+                submodel_added_with_allowed_models[submodel_added_with_allowed_models == EXPL_NEG + IMPL_NEG] = EXPL_NEG  # -3 becomes -2
+                print(submodel_added_with_allowed_models)
+                submodel_added_with_allowed_models[submodel_added_with_allowed_models == EXPL_NEG + EXPL_NEG] = EXPL_NEG  # -4 beecomes -2
+                print(submodel_added_with_allowed_models)
+
+                logging.debug("added submodel with allowed model {}".format(submodel_added_with_allowed_models))
                 sub_models_merged_model.append(submodel_added_with_allowed_models)
-                logging.debug("List of valid submodels until now:", sub_models_merged_model)
+                logging.debug("List of valid submodels until now: {}".format(sub_models_merged_model))
 
             # finished iterating through all submodels
             # has collected all valid combinations of both the models
