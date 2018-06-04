@@ -10,7 +10,7 @@
 # XXX `Or` might be mapped to Xor in case of an intuitive model
 # XXX
 
-intuit_op = {
+# intuit_op = {
     '[]': "Necessary",
     '<>': "Possibly",
     '~': "Not",

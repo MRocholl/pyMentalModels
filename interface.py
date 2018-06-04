@@ -25,6 +25,7 @@ def main(args):
 
     models = []
     for sympified_expression in sympified_expressions:
+        print()
         print("The expression to be evaluated is: {}".format(sympified_expression))
         model = mental_model_builder(sympified_expression, args.mode)
         logging.debug("{}".format(model))
@@ -36,11 +37,12 @@ def main(args):
     if len(models) <= 1:
         return "Nothing to infer"
     result = infer(models, args.infer)
-    if not result:
-        print("The result is the empty model", result.model)
-    print(result)
-    for possible_world in result.model:
-            print(pretty_print_atom_assign(possible_world, result.atoms_model, args.mode))
+    if args.infer == InferenceTask.FOLLOWS:
+        if not result:
+            print("The result is the empty model", result.model)
+        print(result)
+        for possible_world in result.model:
+                print(pretty_print_atom_assign(possible_world, result.atoms_model, args.mode))
 
 
 if __name__ == "__main__":
@@ -69,7 +71,7 @@ if __name__ == "__main__":
                 5. verify?:
                     Set task: Given evidence last premise, verify all but last
                 6. only_models:
-                    No task specified and so builds models of all the premises
+                    Builds models of all the premises
             """))
 
     args, unknowns = parser.parse_known_args()

@@ -28,6 +28,8 @@ def normalize_combined_model_values(model):
     # after adding values can either be 2, -2 , -3 or -4 for the indexes that are active in both models
     # for the other indices values are 0, -1, -2 or 1
     # for the active indices map 4, -2, -3 and -4 to 1, -1, -2
+
+    # XXX with exxxplicit mode, implicit neg == Expl neg
     model[model == POS_VAL + POS_VAL] = POS_VAL
     model[model == POS_VAL + IMPL_NEG] = POS_VAL
     model[model == IMPL_NEG + IMPL_NEG] = IMPL_NEG
@@ -165,6 +167,8 @@ def infer(models: List, task: InferenceTask):
     """
     print()
     print("Inference task is: {}".format(task))
+    if task == InferenceTask.ONLY_MODELS:
+        return
     # first preprocess all mental models to share the same column space
     all_atoms_in_all_models = sorted(set().union(*(set(model.atoms_model) for model in models)), key=str)  # type: List
     atom_index_mapping_all = {atom: i for i, atom in enumerate(all_atoms_in_all_models)}
@@ -182,8 +186,6 @@ def infer(models: List, task: InferenceTask):
         print("The {}th model is:".format(i + 1))
         print(model)
 
-    if task == InferenceTask.ONLY_MODELS:
-        return
 
     if task == InferenceTask.FOLLOWS:
         print()
@@ -200,15 +202,15 @@ def infer(models: List, task: InferenceTask):
     possible_models = reduce(lambda model1, model2: combine_mental_models(model1, model2, atom_index_mapping_all, all_atoms_in_all_models), all_but_last_models)
 
     if task == InferenceTask.NECESSARY:
-        raise NotImplementedError("Will return wether last premise necessarily follows from previous")
-    if not last_model.shape[0] == 1:
-        raise ValueError("The last premise should be a simple one that yields a single possible model")
-        necessary_atoms = np.all(possible_models == possible_models[0, :], axis=0)
-        last_model_active_indices = last_model.all(axis=0)
-        necessary_atoms[:, last_model_active_indices == ]
-
-
-
+        if not last_model.shape[0] == 1:
+            raise ValueError("The last premise should be a simple one that yields a single possible model")
+        necessary_atoms = {i for i, val in enumerate(np.all(possible_models == possible_models[0, :], axis=0)) if val}
+        last_model_active_indices = {i for i, val in enumerate(last_model.all(axis=0))}
+        if necessary_atoms.issuperset(last_model_active_indices):
+            all_but_last, last = ", ".join(str(model.expr) for model in models[:-1]), models[-1].expr
+            print("The last premise '{}' necessarily follows from the previous expressions '{}'".format(last, all_but_last))
+        else:
+            print("The last premise '{}' does not necessarily follow from the previous expressons '{}'".format(last, all_but_last))
 
         return mental_model(tuple(model.expr for model in models), possible_models, all_atoms_in_all_models, atom_index_mapping_all)
 

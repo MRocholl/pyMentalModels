@@ -428,15 +428,15 @@ def build_implication(exp, atom_index_mapping, exp_atoms, mode):
         return implication_model
     else:
         if not isinstance(antecedent, Symbol) and not isinstance(consequent, Symbol):
-            modelized_antecedent = map_instance_to_operation(antecedent)(antecedent, atom_index_mapping, exp_atoms)
-            modelized_consequent = map_instance_to_operation(consequent)(consequent, atom_index_mapping, exp_atoms)
+            modelized_antecedent = map_instance_to_operation(antecedent, mode)(antecedent, atom_index_mapping, exp_atoms, mode)
+            modelized_consequent = map_instance_to_operation(consequent, mode)(consequent, atom_index_mapping, exp_atoms, mode)
 
         elif not isinstance(consequent, Symbol):
             modelized_antecedent = np.zeros((1, len(exp_atoms)))
             modelized_antecedent[:, atom_index_mapping[antecedent]] = POS_VAL
-            modelized_consequent = map_instance_to_operation(consequent)(consequent, atom_index_mapping, exp_atoms)
+            modelized_consequent = map_instance_to_operation(consequent, mode)(consequent, atom_index_mapping, exp_atoms, mode)
         else:
-            modelized_antecedent = map_instance_to_operation(antecedent)(antecedent, atom_index_mapping, exp_atoms)
+            modelized_antecedent = map_instance_to_operation(antecedent, mode)(antecedent, atom_index_mapping, exp_atoms, mode)
             modelized_consequent = np.zeros((1, len(exp_atoms)))
             modelized_consequent[:, atom_index_mapping[consequent]] = POS_VAL
 
@@ -649,7 +649,7 @@ def _merge_and(*sub_models, atom_index_mapping, exp_atoms):
                     continue
                 allowed_models = np.stack(allowed_models)
                 reshaped_submodel = np.repeat(np.atleast_2d(submodel), len(allowed_models), axis=0)
-                logging.debug("LENGTH ALLOWD: {}".format(len(allowed_models)))
+                logging.debug("LENGTH ALLOWED: {}".format(len(allowed_models)))
                 logging.debug("Sub: {}".format(submodel))
                 logging.debug("reshaped: {}".format(reshaped_submodel))
                 logging.debug("{}".format(allowed_models))
@@ -846,5 +846,7 @@ def _complement_array_model(model, atom_index_mapping, exp_atoms):
 
 def _increasing_ones_first_sort(array_slice):
     """ Helper function to sort models by atom"""
-    pos_of_ones = [-array_slice[i] for i, _ in enumerate(array_slice)]
-    return array_slice.count(1), pos_of_ones
+    # this negates all the values as sorted will sort from smallest to biggest
+    first_positive_then_neg = [-val for val in array_slice]
+    # first sorts after number of positive values and then after the order in the array
+    return array_slice.count(POS_VAL), first_positive_then_neg

@@ -5,17 +5,17 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 
-from pyMentalModels.operators import intuit_op, explicit_op
 from pyMentalModels.modal_parser import parse_format
+from pyMentalModels.constants import POS_VAL, IMPL_NEG, EXPL_NEG
 from pyMentalModels.numpy_reasoner import mental_model_builder
 from pyMentalModels.infer import infer
 from pyMentalModels.pretty_printing import pretty_print_atom_assign
 
 
-def _infer(expressions, op=intuit_op):
+def _infer(expressions, mode):
 
     sympified_expressions = [
-        parse_format(expr, op)
+        parse_format(expr)
         for expr in expressions
     ]
     print(sympified_expressions)
@@ -23,22 +23,22 @@ def _infer(expressions, op=intuit_op):
     models = []
     for sympified_expression in sympified_expressions:
         print("The expression to be evaluated is: {}".format(sympified_expression))
-        model = mental_model_builder(sympified_expression)
+        model = mental_model_builder(sympified_expression, mode)
         print(model)
         models.append(model)
         print("The mental model that has been created is:")
         for possible_world in model.model:
-            print(pretty_print_atom_assign(model.atoms_model, possible_world, args.mode))
+            print(pretty_print_atom_assign(model.atoms_model, possible_world, mode))
 
     result = infer(models)
     for possible_world in result.model:
             print(possible_world)
-            print(pretty_print_atom_assign(result.atoms_model, possible_world, args.mode))
+            print(pretty_print_atom_assign(result.atoms_model, possible_world, mode))
 
 
 def _eval_expr(expressions, mode):
-    op = intuit_op if mode == "intuitive" else explicit_op
-    result = infer(*(mental_model_builder(parse_format(expr, op=op) for expr in expressions)))
+    # Does the right thing
+    result = infer(*(mental_model_builder(parse_format(expr), mode) for expr in expressions), mode)
     return result.model
 
 
@@ -51,7 +51,7 @@ class TestLispCases(unittest.TestCase):
         The models of premise 1 represent:  Null model.
         Number of models constructed equals 0
         """
-        npt.assert_array_equal(mental_model_builder(parse_format("a & ~a", intuit_op)).model, np.array([[]]))
+        npt.assert_array_equal(mental_model_builder(parse_format("a & ~a")).model, np.array([[]]))
 
         """
         2 A OR NOT A.
@@ -62,7 +62,7 @@ class TestLispCases(unittest.TestCase):
         Number of models constructed equals 2
 
         """
-        npt.assert_array_equal(mental_model_builder(parse_format("a | ~a", intuit_op)).model, np.array([[-2.], [1.]]))
+        npt.assert_array_equal(mental_model_builder(parse_format("a | ~a")).model, np.array([[-2.], [1.]]))
 
         """
         3 B. IF A THEN B.
