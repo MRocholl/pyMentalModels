@@ -167,8 +167,8 @@ def infer(models: List, task: InferenceTask):
     """
     print()
     print("Inference task is: {}".format(task))
-    if task == InferenceTask.ONLY_MODELS:
-        return
+    if task == InferenceTask.ONLY_MODELS or len(models) <= 1:
+        return models[0]
     # first preprocess all mental models to share the same column space
     all_atoms_in_all_models = sorted(set().union(*(set(model.atoms_model) for model in models)), key=str)  # type: List
     atom_index_mapping_all = {atom: i for i, atom in enumerate(all_atoms_in_all_models)}

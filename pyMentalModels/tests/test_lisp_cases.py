@@ -7,8 +7,8 @@ import numpy.testing as npt
 
 from pyMentalModels.modal_parser import parse_format
 from pyMentalModels.constants import POS_VAL, IMPL_NEG, EXPL_NEG
-from pyMentalModels.numpy_reasoner import mental_model_builder
-from pyMentalModels.infer import infer
+from pyMentalModels.numpy_reasoner import mental_model_builder, Insight
+from pyMentalModels.infer import infer, InferenceTask
 from pyMentalModels.pretty_printing import pretty_print_atom_assign
 
 
@@ -38,7 +38,7 @@ def _infer(expressions, mode):
 
 def _eval_expr(expressions, mode):
     # Does the right thing
-    result = infer(*(mental_model_builder(parse_format(expr), mode) for expr in expressions), mode)
+    result = infer([mental_model_builder(parse_format(expr), mode) for expr in expressions], InferenceTask.FOLLOWS)
     return result.model
 
 
@@ -51,7 +51,7 @@ class TestLispCases(unittest.TestCase):
         The models of premise 1 represent:  Null model.
         Number of models constructed equals 0
         """
-        npt.assert_array_equal(mental_model_builder(parse_format("a & ~a")).model, np.array([[]]))
+        npt.assert_array_equal(mental_model_builder(parse_format("a & ~a"), Insight.INTUITIVE).model, np.array([[]]))
 
         """
         2 A OR NOT A.
@@ -62,7 +62,7 @@ class TestLispCases(unittest.TestCase):
         Number of models constructed equals 2
 
         """
-        npt.assert_array_equal(mental_model_builder(parse_format("a | ~a")).model, np.array([[-2.], [1.]]))
+        npt.assert_array_equal(mental_model_builder(parse_format("a | ~a"), Insight.INTUITIVE).model, np.array([[POS_VAL], [EXPL_NEG]]))
 
         """
         3 B. IF A THEN B.
@@ -77,7 +77,7 @@ class TestLispCases(unittest.TestCase):
         Number of models constructed equals 3
 
         """
-        npt.assert_array_equal(_eval_expr(["b", "a -> b"], "intuitive"), np.array([[1., 1.]]))
+        npt.assert_array_equal(_eval_expr(["b", "a -> b"], Insight.INTUITIVE), np.array([[POS_VAL, POS_VAL]]))
 
         """
 
@@ -94,7 +94,7 @@ class TestLispCases(unittest.TestCase):
 
         """
 
-        npt.assert_array_equal(_eval_expr(["~a", "a -> b"], "intuitive"), np.array([[]]))
+        npt.assert_array_equal(_eval_expr(["~a", "a -> b"], Insight.INTUITIVE), np.array([[]]))
 
         """
 
@@ -114,7 +114,7 @@ class TestLispCases(unittest.TestCase):
         Number of models constructed equals 5
 
         """
-        npt.assert_array_equal(_eval_expr(["a", "a -> b", "b"], "intuitive"), np.array([[1., 1.]]))
+        npt.assert_array_equal(_eval_expr(["a", "a -> b", "b"], Insight.INTUITIVE), np.array([[POS_VAL, POS_VAL]]))
         """
 
         6 A. IF A THEN B. A AND B AND C.
@@ -134,7 +134,7 @@ class TestLispCases(unittest.TestCase):
 
         """
 
-        npt.assert_array_equal(_eval_expr(["a", "a -> b", "a & b & c"], "intuitive"), np.array([[1., 1., 1.]]))
+        npt.assert_array_equal(_eval_expr(["a", "a -> b", "a & b & c"], Insight.INTUITIVE), np.array([[POS_VAL, POS_VAL, POS_VAL]]))
 
         """
 
@@ -154,7 +154,7 @@ class TestLispCases(unittest.TestCase):
         Number of models constructed equals 5
 
         """
-        npt.assert_array_equal(_eval_expr(["a", "a -> (b & c)", "a & b & c"], "intuitive"), np.array([[1., 1., 1.]]))
+        npt.assert_array_equal(_eval_expr(["a", "a -> (b & c)", "a & b & c"], Insight.INTUITIVE), np.array([[POS_VAL, POS_VAL, POS_VAL]]))
         """
 
         8 A. IF A THEN B. B AND A.
@@ -174,7 +174,7 @@ class TestLispCases(unittest.TestCase):
 
         """
 
-        npt.assert_array_equal(_eval_expr(["a", "a -> b", "b & a"], "intuitive"), np.array([[1., 1.]]))
+        npt.assert_array_equal(_eval_expr(["a", "a -> b", "b & a"], Insight.INTUITIVE), np.array([[POS_VAL, POS_VAL]]))
         """
 
         9 IF A THEN B. A AND NOT B.

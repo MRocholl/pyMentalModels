@@ -51,7 +51,27 @@ def test_merge_and():
 
     npt.assert_array_equal(_merge_and(
         np.array([POS_VAL]),
-        np.array([EXP_NEG]),
+        np.array([EXPL_NEG]),
         atom_index_mapping=atom_index_mapping,
         exp_atoms=exp_atoms,),
         np.array([[]]))
+
+    def test_merge_or():
+        pass
+        npt.assert_array_equal(_merge_or(
+            np.array([[]])))
+
+    def test_merge_equivalent():
+        pass
+        npt.assert_array_equal(_merge_equivalent(
+            np.array([[]])))
+
+    def test_merge_implication():
+        pass
+        npt.assert_array_equal(_merge_implication(
+            np.array([[]])))
+
+    def test_merge_xor():
+        pass
+        npt.assert_array_equal(_merge_xor(
+            np.array([[]])))

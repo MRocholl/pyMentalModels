@@ -3,18 +3,29 @@
 
 
 from pyMentalModels.numpy_reasoner import mental_model_builder
-from pyMentalModels.infer import infer
+from pyMentalModels.infer import infer, InferenceTask
 
 from sympy import symbols
 from sympy.logic.boolalg import And, Or, Xor, Implies, Equivalent, Not
+from pyMentalModels.numpy_reasoner import Insight
+from pyMentalModels.modal_parser import parse_format
+
 import numpy.testing as npt
 import numpy as np
+
+
+def _eval_expr(expressions, mode):
+    # Does the right thing
+    result = infer([mental_model_builder(parse_format(expr), mode) for expr in expressions], InferenceTask.FOLLOWS)
+    return result.model
+
 
 def test_infer():
     A, B, C = symbols("A B C")
 
+
 def test_premise_parirings():
-    npt.assert_array_equal(mental_model_builder("A & ~A"), np.array([[]]))
+    npt.assert_array_equal(_eval_expr(["A & ~A", ], Insight.INTUITIVE), np.array([[]]))
 
     test_premise_pairings = [
         ["A & ~A"],                              # 1 above

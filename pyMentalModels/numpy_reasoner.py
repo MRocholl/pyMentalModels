@@ -298,7 +298,8 @@ def build_or(exp, atom_index_mapping, exp_atoms, mode):
 
         # merge the generated submodels to an overall model of `And`
         merged_sub_models = _merge_or(*modelized_subexpressions, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms)
-        return np.unique(merged_sub_models, axis=0)
+        print(merged_sub_models)
+        return np.array(sorted(np.unique(merged_sub_models, axis=0), key=_increasing_ones_first_sort))
 
 
 def build_and(exp, atom_index_mapping, exp_atoms, mode):
@@ -337,7 +338,7 @@ def build_and(exp, atom_index_mapping, exp_atoms, mode):
         # merge the generated submodels to an overall model of `And`
         merged_sub_models = _merge_and(*modelized_subexpressions, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms)
         if merged_sub_models.size:
-            return np.unique(merged_sub_models, axis=0)
+            return np.array(sorted(np.unique(merged_sub_models, axis=0), key=_increasing_ones_first_sort))
         else:
             return merged_sub_models
 
@@ -366,7 +367,7 @@ def build_xor(exp, atom_index_mapping, exp_atoms, mode):
             else:
                 subexpression_list.append(el)
         modelized_subexpressions = [
-            map_instance_to_operation(subexpression)(subexpression, atom_index_mapping, exp_atoms)
+            map_instance_to_operation(subexpression, mode)(subexpression, atom_index_mapping, exp_atoms, mode)
             for subexpression in subexpression_list
         ]
 
@@ -383,7 +384,7 @@ def build_xor(exp, atom_index_mapping, exp_atoms, mode):
         merged_sub_models = _merge_xor(
             *modelized_subexpressions, atom_index_mapping=atom_index_mapping,
             exp_atoms=exp_atoms)
-        return np.unique(merged_sub_models, axis=0)
+        return np.array(sorted(np.unique(merged_sub_models, axis=0), key=_increasing_ones_first_sort))
 
 
 def build_implication(exp, atom_index_mapping, exp_atoms, mode):
@@ -443,7 +444,7 @@ def build_implication(exp, atom_index_mapping, exp_atoms, mode):
             modelized_antecedent, modelized_consequent, atom_index_mapping=atom_index_mapping,
             exp_atoms=exp_atoms)
 
-        return np.unique(merged_sub_models, axis=0)
+        return np.array(sorted(np.unique(merged_sub_models, axis=0), key=_increasing_ones_first_sort))
 
 
 def build_equals(exp, atom_index_mapping, exp_atoms, mode):
@@ -487,15 +488,15 @@ def build_equals(exp, atom_index_mapping, exp_atoms, mode):
         return bi_implication_model
     else:
         if not isinstance(antecedent, Symbol) and not isinstance(consequent, Symbol):
-            modelized_antecedent = map_instance_to_operation(antecedent)(antecedent, atom_index_mapping, exp_atoms)
-            modelized_consequent = map_instance_to_operation(consequent)(consequent, atom_index_mapping, exp_atoms)
+            modelized_antecedent = map_instance_to_operation(antecedent, mode)(antecedent, atom_index_mapping, exp_atoms, mode)
+            modelized_consequent = map_instance_to_operation(consequent, mode)(consequent, atom_index_mapping, exp_atoms, mode)
 
         elif not isinstance(consequent, Symbol):
             modelized_antecedent = np.zeros((1, len(exp_atoms)))
             modelized_antecedent[:, atom_index_mapping[antecedent]] = 1
-            modelized_consequent = map_instance_to_operation(consequent)(consequent, atom_index_mapping, exp_atoms)
+            modelized_consequent = map_instance_to_operation(consequent, mode)(consequent, atom_index_mapping, exp_atoms, mode)
         else:
-            modelized_antecedent = map_instance_to_operation(antecedent)(antecedent, atom_index_mapping, exp_atoms)
+            modelized_antecedent = map_instance_to_operation(antecedent, mode)(antecedent, atom_index_mapping, exp_atoms, mode)
             modelized_consequent = np.zeros((1, len(exp_atoms)))
             modelized_consequent[:, atom_index_mapping[consequent]] = 1
 
@@ -503,7 +504,7 @@ def build_equals(exp, atom_index_mapping, exp_atoms, mode):
             modelized_antecedent, modelized_consequent, atom_index_mapping=atom_index_mapping,
             exp_atoms=exp_atoms)
 
-        return np.unique(merged_sub_models, axis=0)
+        return np.array(sorted(np.unique(merged_sub_models, axis=0), key=_increasing_ones_first_sort))
 
 
 def build_not(exp, atom_index_mapping, exp_atoms, mode):
@@ -741,6 +742,7 @@ def _merge_xor(*sub_models, atom_index_mapping, exp_atoms):
 
 def _merge_or(*sub_models, atom_index_mapping, exp_atoms):
         # first xor everything
+        print(sub_models)
         xor_models = _merge_xor(*sub_models, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms)
         merged_models = xor_models
         # then piecewise and everything
@@ -748,17 +750,17 @@ def _merge_or(*sub_models, atom_index_mapping, exp_atoms):
             _merge_and(*comb, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms)
             for comb in combinations(sub_models, 2)
         ]
-        for el in list_of_piecewise_ands:
-            merged_models = np.vstack((merged_models, el))
 
+        if len(list_of_piecewise_ands) > 1:
+            for el in list_of_piecewise_ands:
+                merged_models = np.vstack((merged_models, el))
         # then total and everything
         and_everything = _merge_and(*sub_models, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms)
 
-        merged_models = np.vstack((merged_models, and_everything))
-
-        # XXX This needs to be fixed. Should be POS_VAL and IMPL_NEG etc...
-        merged_models[merged_models > 0] = 1
-        merged_models[merged_models < 0] = -1
+        print(merged_models, and_everything)
+        print(merged_models.shape, and_everything.shape)
+        if and_everything.size:
+            merged_models = np.vstack((merged_models, and_everything))
         return merged_models
 
 
@@ -858,4 +860,4 @@ def _increasing_ones_first_sort(array_slice):
     # this negates all the values as sorted will sort from smallest to biggest
     first_positive_then_neg = [-val for val in array_slice]
     # first sorts after number of positive values and then after the order in the array
-    return array_slice.count(POS_VAL), first_positive_then_neg
+    return list(array_slice).count(POS_VAL) == 0, list(array_slice).count(POS_VAL), first_positive_then_neg
