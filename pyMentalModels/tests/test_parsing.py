@@ -5,7 +5,6 @@ import unittest
 
 # Package related imports
 from pyMentalModels.modal_parser import parse_expr, sympify_formatter
-from pyMentalModels.operators import explicit_op, intuit_op
 
 
 expressions = [
@@ -67,17 +66,6 @@ test_formatting_expr_R_full = {
     # further premise pairings to be added here
 }
 
-test_formatting_expr_R_intuit = {
-    "Possibly(A)": ['<>', 'A'],
-    "And(A, B)": ['A', '->', 'B'],
-    "And(A, Possibly(B))": ['A', '->', ['<>', 'B']],
-    "Necessary(A)": ['[]', 'A'],
-    "And(Necessary(A), B)": [['[]', 'A'], '->', 'B'],
-    "Possibly(And(A, B))": ['<>', ['A', '->', 'B']],
-    "Necessary(And(A, B))": ['[]', ['A', '->', 'B']],
-    # further premise pairings to be added here
-}
-
 
 class TestParse(unittest.TestCase):
 
@@ -100,11 +88,7 @@ class TestFormatter(unittest.TestCase):
 
     def test_formatting_expression_R_full(self):
         for due, parsed_expr in test_formatting_expr_R_full.items():
-            self.assertEqual(sympify_formatter(parsed_expr, explicit_op), due)
-
-    def test_formatting_expression_R_intuit(self):
-        for due, parsed_expr in test_formatting_expr_R_intuit.items():
-            self.assertEqual(sympify_formatter(parsed_expr, intuit_op), due)
+            self.assertEqual(sympify_formatter(parsed_expr), due)
 
 
 if __name__ == "__main__":

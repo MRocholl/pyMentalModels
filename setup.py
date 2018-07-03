@@ -2,8 +2,8 @@ from os.path import realpath, dirname, join as path_join
 from setuptools import setup, find_packages
 
 NAME = "pyMentalModels"
-DESCRIPTION = "pyMentalModels"
-LONG_DESCRIPTION = "pyMentalModels is a Python implementation of the Mental Model reasoning theory."
+DESCRIPTION = "Python implementation of the msentential reasoner"
+LONG_DESCRIPTION = open("README.rst").read()
 MAINTAINER = "Moritz Rocholl"
 MAINTAINER_EMAIL = "moritz.rocholl@gmail.com"
 URL = "https://gkigit.informatik.uni-freiburg.de/coco/mentalmodels.git"
@@ -28,7 +28,7 @@ if __name__ == "__main__":
         maintainer_email=MAINTAINER_EMAIL,
         description=DESCRIPTION,
         url=URL,
-        scripts=["mental-model"],
+        scripts=["scripts/mmreasoner"],
         long_description=LONG_DESCRIPTION,
         packages=find_packages(),
         package_data={"docs": ["*"]},
