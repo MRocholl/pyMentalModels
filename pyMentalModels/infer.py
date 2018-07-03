@@ -40,8 +40,8 @@ def normalize_combined_model_values(model):
 
 def combine_mental_models(model1, model2, atom_index_mapping, exp_atoms):
     logging.debug("Combining mental models: ")
-    logging.debug(model1)
-    logging.debug(model2)
+    logging.debug(str(model1))
+    logging.debug(str(model2))
 
     if not model1.size or not model2.size:
         logging.debug("Either model1 or model2 is the empty model")
@@ -80,16 +80,16 @@ def combine_mental_models(model1, model2, atom_index_mapping, exp_atoms):
                 continue
             allowed_models = np.stack(allowed_models)
             reshaped_submodel = np.repeat(np.atleast_2d(submodel), len(allowed_models), axis=0)
-            logging.debug("Reshaped submodel:", reshaped_submodel)
+            logging.debug("Reshaped submodel:".format(reshaped_submodel))
             submodel_added_with_allowed_models = reshaped_submodel + allowed_models
             logging.info("SUBMODEL: {}".format(submodel_added_with_allowed_models))
             # after adding values can either be 2, -2 , -3 or -4 for the indexes that are active in both models
             # for the other indices values are 0, -1, -2 or 1
             # for the active indices map 4, -2, -3 and -4 to 1, -1, -2
             submodel_added_with_allowed_models = normalize_combined_model_values(submodel_added_with_allowed_models)
-            logging.debug("added submodel with allowed model", submodel_added_with_allowed_models)
+            logging.debug("added submodel with allowed model".format(submodel_added_with_allowed_models))
             sub_models_merged_model.append(submodel_added_with_allowed_models)
-            logging.debug("List of valid submodels until now:", sub_models_merged_model)
+            logging.debug("List of valid submodels until now:".format(sub_models_merged_model))
 
         # finished iterating through all submodels
         # has collected all valid combinations of both the models
@@ -107,7 +107,7 @@ def combine_mental_models(model1, model2, atom_index_mapping, exp_atoms):
         merged_models = reshaped_model1 + reshaped_model2
 
     logging.info("The combination of both models yields: ")
-    logging.info(merged_models)
+    logging.info(str(merged_models))
     return merged_models
 
 
@@ -131,7 +131,7 @@ def resize_model(model, atom_index_mapping_all, all_atoms_in_all_models):
     """
     resized_mental_model = np.zeros((len(model.model), len(all_atoms_in_all_models)))
     resized_mental_model[:, list(map(lambda atom: atom_index_mapping_all[atom], model.atoms_model))] = model.model
-    logging.debug(resized_mental_model)
+    logging.debug("Resized model: {}".format(resized_mental_model))
     return resized_mental_model
 
 
@@ -186,43 +186,80 @@ def infer(models: List, task: InferenceTask):
         print("The {}th model is:".format(i + 1))
         print(model)
 
-
     if task == InferenceTask.FOLLOWS:
         print()
         print("Combine mental models...")
-        possible_models = reduce(lambda model1, model2: combine_mental_models(model1, model2, atom_index_mapping_all, all_atoms_in_all_models), resized_mental_models)
+        possible_models = reduce(
+            lambda model1, model2:
+            combine_mental_models(
+                model1, model2,
+                atom_index_mapping_all, all_atoms_in_all_models
+            ),
+            resized_mental_models
+        )
         return mental_model(tuple(model.expr for model in models), possible_models, all_atoms_in_all_models, atom_index_mapping_all)
 
     # all the other modes separate the last expression from the first n-1
     *all_but_last_models, last_model = resized_mental_models
+    all_but_last_str, last_str = ", ".join(str(model.expr) for model in models[:-1]), models[-1].expr
 
     # possible models given the first n-1 premises
     print()
     print("Combine all but last mental models...")
-    possible_models = reduce(lambda model1, model2: combine_mental_models(model1, model2, atom_index_mapping_all, all_atoms_in_all_models), all_but_last_models)
+    possible_models = reduce(
+        lambda model1, model2:
+        combine_mental_models(
+            model1, model2,
+            atom_index_mapping_all, all_atoms_in_all_models
+        ), all_but_last_models
+    )
 
     if task == InferenceTask.NECESSARY:
+
         if not last_model.shape[0] == 1:
             raise ValueError("The last premise should be a simple one that yields a single possible model")
-        necessary_atoms = {i for i, val in enumerate(np.all(possible_models == possible_models[0, :], axis=0)) if val}
-        last_model_active_indices = {i for i, val in enumerate(last_model.all(axis=0))}
+
+        necessary_atoms = {
+            i for i, val in enumerate(
+                np.all(possible_models == possible_models[0, :], axis=0)
+            )
+            if val
+        }
+
+        last_model_active_indices = {
+            i for i, val in enumerate(
+                last_model.all(axis=0)
+            )
+            if val
+        }
+
         if necessary_atoms.issuperset(last_model_active_indices):
-            all_but_last, last = ", ".join(str(model.expr) for model in models[:-1]), models[-1].expr
-            print("The last premise '{}' necessarily follows from the previous expressions '{}'".format(last, all_but_last))
+            print("The last premise '{}' necessarily follows from the previous expressions '{}'".format(last_str, all_but_last_str))
         else:
-            print("The last premise '{}' does not necessarily follow from the previous expressons '{}'".format(last, all_but_last))
+            print("The last premise '{}' does not necessarily follow from the previous expressons '{}'".format(last_str, all_but_last_str))
 
         return mental_model(tuple(model.expr for model in models), possible_models, all_atoms_in_all_models, atom_index_mapping_all)
 
     if task == InferenceTask.POSSIBLE:
-        raise NotImplementedError("Will return wether last premise possibly follows from previous")
+        if not last_model.shape[0] == 1:
+            raise ValueError("The last premise should be a simple one that yields a single possible model")
+        print(possible_models.shape, last_model.shape)
+        # Get the active indices for the last model to compare agains the different
+        # possible_models in the all_but_last model
+        last_model_active_indices = list({i for i, val in enumerate(last_model.all(axis=0)) if val})
+        values_at_active_indices = last_model[0, last_model_active_indices]
+        for possible_model in possible_models:
+            if np.equal(  # This will compare the following to arrays elementwise
+                values_at_active_indices,
+                possible_model[last_model_active_indices]
+            ).all():  # And return if all the values where the same
+                print("The last premise '{}' possibly follows from the previous expressions '{}'".format(last_str, all_but_last_str))
+        print("The last premise '{}' does not possibly follow from the previous expressons '{}'".format(last_str, all_but_last_str))
+
         return mental_model(tuple(model.expr for model in models), possible_models, all_atoms_in_all_models, atom_index_mapping_all)
 
     if task == InferenceTask.PROBABILITY:
-        raise NotImplementedError("Future work...")
-        print()
-        print("Combine mental models...")
-        return mental_model(tuple(model.expr for model in models), possible_models, all_atoms_in_all_models, atom_index_mapping_all)
+        raise NotImplementedError("Future work...")  # XXX Requires probabilities based on facts I do not have implemented
 
     if task == InferenceTask.VERIFY:
         raise NotImplementedError("")
@@ -230,15 +267,3 @@ def infer(models: List, task: InferenceTask):
         print("Combine mental models...")
         possible_models = reduce(lambda model1, model2: combine_mental_models(model1, model2, atom_index_mapping_all, all_atoms_in_all_models), resized_mental_models)
         return mental_model(tuple(model.expr for model in models), possible_models, all_atoms_in_all_models, atom_index_mapping_all)
-
-
-"""
-    pairings_of_models = list(product(*resized_mental_models))
-
-    for pairing in pairings_of_models:
-        possible_model = _merge_models(*pairing, atom_index_mapping=atom_index_mapping_all, exp_atoms=all_atoms_in_all_models, op="And")
-        if possible_model.size:
-            possible_models.append(possible_model)
-            logging.info("Given the models: {}".format(pairing))
-            logging.info("The following model is possible: {}".format(possible_model))
-    """

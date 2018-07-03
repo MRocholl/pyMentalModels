@@ -16,10 +16,10 @@ from pyMentalModels.constants import EXPL_NEG, POS_VAL, IMPL_NEG
 #######################################################################
 #                            Notes to self                            #
 #######################################################################
-# XXX Builds model of an expression successfully
+#
 # Also does not care how many arguments Xor takes (psychologically viable)
 #
-# TODO Indroduce choice between system 1 and system 2
+#
 # Proposed solution:
 #
 
@@ -31,9 +31,9 @@ from pyMentalModels.constants import EXPL_NEG, POS_VAL, IMPL_NEG
 # --------------------------|-------------------------|--------------------------------
 # Neither A nor B           |      ~A  ~B             |             ~A  ~B
 # --------------------------|-------------------------|--------------------------------
-# XXX Difference between    |                         |
-# XXX Or and XOR maybe not  |                         |
-# XXX Clear                 |                         |
+#                           |                         |
+#                           |                         |
+#                           |                         |
 #                           |                         |
 # A or else B, but not both |       A                 |              A  ~B
 #                           |           B             |             ~A   B
@@ -66,12 +66,12 @@ and adds all the models together like the `And` operator does.
 Hence, the `OR` operator acts quite like a combination of both the `Xor`
 and And operator for all subexpressions piecewise and total.
     For (A & B) or (C & D) or (E xor F)
-    with (A & B):= Arg1, (C & D):=Arg2, etc...
+    with (A & B)=: Arg1, (C & D)=:Arg2, etc...
 
     The Model is:
     -------------
     Arg1 xor Arg2 xor Arg3  // This is just a vstack
-    Arg1 & Arg2             // Piecewise addition
+    Arg1 & Arg2             // Piecewise concatenation
     Arg2 & Arg3             //      ""
     Arg1 & Arg2 & Arg3      // Addition of all three
     ========================
@@ -82,7 +82,7 @@ The straight-forward way would be to duck-type it to the `And` behavior.
 
 
 
-The problem child `Not`
+`Not`
 
 The builder catches Nots as not being a symbol and will eventually try to
 construct a model of a `Not(Atom)` or `Not(sub_expr)`
@@ -265,7 +265,7 @@ def build_or(exp, atom_index_mapping, exp_atoms, mode):
 
     if all(isinstance(el, Symbol) for el in exp.args):
         pos_valuations = [x for x in product([IMPL_NEG, POS_VAL], repeat=nr_args)][1:]
-        pos_valuations = sorted(pos_valuations, key=_increasing_ones_first_sort)
+        pos_valuations = sorted(pos_valuations, key=_sort_by_pos_vals)
         or_model = np.zeros((len(pos_valuations), len(exp_atoms)))
         or_model[
             :, list(map(lambda x: atom_index_mapping[x], or_args))
@@ -289,7 +289,7 @@ def build_or(exp, atom_index_mapping, exp_atoms, mode):
         # Create `or` model for the symbols
         if symbol_list:
             pos_valuations = [x for x in product([IMPL_NEG, POS_VAL], repeat=len(symbol_list))][1:]
-            pos_valuations = sorted(pos_valuations, key=_increasing_ones_first_sort)
+            pos_valuations = sorted(pos_valuations, key=_sort_by_pos_vals)
             or_model = np.zeros((len(pos_valuations), len(exp_atoms)))
             or_model[
                 :, list(map(lambda x: atom_index_mapping[x], symbol_list))
@@ -299,7 +299,7 @@ def build_or(exp, atom_index_mapping, exp_atoms, mode):
         # merge the generated submodels to an overall model of `And`
         merged_sub_models = _merge_or(*modelized_subexpressions, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms)
         print(merged_sub_models)
-        return np.array(sorted(np.unique(merged_sub_models, axis=0), key=_increasing_ones_first_sort))
+        return np.array(sorted(np.unique(merged_sub_models, axis=0), key=_sort_by_pos_vals))
 
 
 def build_and(exp, atom_index_mapping, exp_atoms, mode):
@@ -338,7 +338,7 @@ def build_and(exp, atom_index_mapping, exp_atoms, mode):
         # merge the generated submodels to an overall model of `And`
         merged_sub_models = _merge_and(*modelized_subexpressions, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms)
         if merged_sub_models.size:
-            return np.array(sorted(np.unique(merged_sub_models, axis=0), key=_increasing_ones_first_sort))
+            return np.array(sorted(np.unique(merged_sub_models, axis=0), key=_sort_by_pos_vals))
         else:
             return merged_sub_models
 
@@ -384,7 +384,7 @@ def build_xor(exp, atom_index_mapping, exp_atoms, mode):
         merged_sub_models = _merge_xor(
             *modelized_subexpressions, atom_index_mapping=atom_index_mapping,
             exp_atoms=exp_atoms)
-        return np.array(sorted(np.unique(merged_sub_models, axis=0), key=_increasing_ones_first_sort))
+        return np.array(sorted(np.unique(merged_sub_models, axis=0), key=_sort_by_pos_vals))
 
 
 def build_implication(exp, atom_index_mapping, exp_atoms, mode):
@@ -411,7 +411,6 @@ def build_implication(exp, atom_index_mapping, exp_atoms, mode):
 
     Returns
     -------
-    TODO
 
     """
     assert(isinstance(exp, Implies))
@@ -443,8 +442,7 @@ def build_implication(exp, atom_index_mapping, exp_atoms, mode):
         merged_sub_models = _merge_implication(
             modelized_antecedent, modelized_consequent, atom_index_mapping=atom_index_mapping,
             exp_atoms=exp_atoms)
-
-        return np.array(sorted(np.unique(merged_sub_models, axis=0), key=_increasing_ones_first_sort))
+        return np.array(sorted(np.unique(merged_sub_models, axis=0), key=_sort_by_pos_vals))
 
 
 def build_equals(exp, atom_index_mapping, exp_atoms, mode):
@@ -471,7 +469,6 @@ def build_equals(exp, atom_index_mapping, exp_atoms, mode):
 
     Returns
     -------
-    TODO
 
     """
     assert(isinstance(exp, Equivalent))
@@ -504,7 +501,7 @@ def build_equals(exp, atom_index_mapping, exp_atoms, mode):
             modelized_antecedent, modelized_consequent, atom_index_mapping=atom_index_mapping,
             exp_atoms=exp_atoms)
 
-        return np.array(sorted(np.unique(merged_sub_models, axis=0), key=_increasing_ones_first_sort))
+        return np.array(sorted(np.unique(merged_sub_models, axis=0), key=_sort_by_pos_vals))
 
 
 def build_not(exp, atom_index_mapping, exp_atoms, mode):
@@ -528,6 +525,7 @@ def build_not(exp, atom_index_mapping, exp_atoms, mode):
 
 
 def build_necessary(exp, atom_index_mapping, exp_atoms, mode):
+    # XXX NOT being used right now. Also functionality questionable
     """
     Builds model of `necessary` expression
 
@@ -629,7 +627,7 @@ def _merge_and(*sub_models, atom_index_mapping, exp_atoms):
         merged_model_active_indices = {i for i, val in enumerate(merged_models.any(axis=0)) if val}
         model_active_indices = {i for i, val in enumerate(model.any(axis=0)) if val}
 
-        # single out the overlapping atoms in both models (i.e. (A B) & (B C) -> B)
+        # single out the overlapping atoms in both models (i.e. (A B) , (B C) -> B)
         atom_indices_to_check = list(merged_model_active_indices & model_active_indices)
         logging.debug("Atoms in both models: {}".format(list(map(lambda x: exp_atoms[x], atom_indices_to_check))))
 
@@ -641,14 +639,15 @@ def _merge_and(*sub_models, atom_index_mapping, exp_atoms):
                     or (val1 in (IMPL_NEG, EXPL_NEG) and val2 in (IMPL_NEG, EXPL_NEG))
             for submodel in merged_models:
                 allowed_models = []
-                for sub_model_to_check in model:
-                    print("######################################")
-                    print(submodel)
-                    print(sub_model_to_check)
-                    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-                    if all(same_val(*vals) for vals in zip(submodel[atom_indices_to_check], sub_model_to_check[atom_indices_to_check])):
-                        print("ACCEPTED")
-                        allowed_models.append(sub_model_to_check)
+                for sub_model_to_check in model:  # loop through all the possible submodels
+                    if all(                       # for the second model and compare to current submodel
+                        same_val(*vals)  # Checks if the values for the same active atom
+                        for vals in zip(  # in the two possible models are compatible
+                            submodel[atom_indices_to_check],
+                            sub_model_to_check[atom_indices_to_check]
+                        )
+                    ):
+                        allowed_models.append(sub_model_to_check)  # if yes: append
                 logging.debug("Allowed models are: {}".format(allowed_models))
                 if not allowed_models:
                     logging.debug("No allowed submodels")
@@ -657,19 +656,12 @@ def _merge_and(*sub_models, atom_index_mapping, exp_atoms):
                     allowed_models = np.stack(allowed_models)
                 else:
                     allowed_models = np.atleast_2d(allowed_models)
-                reshaped_submodel = np.repeat(np.atleast_2d(submodel), len(allowed_models), axis=0)
-                # logging.debug("Number of  ALLOWED models: {}".format(len(allowed_models)))
-                # logging.debug("Sub: {}".format(submodel))
-                # logging.debug("reshaped: {}".format(reshaped_submodel))
-                # logging.debug("{}".format(allowed_models))
-                # logging.debug("Reshaped submodel: {}".format(reshaped_submodel))
+                reshaped_submodel = np.repeat(np.atleast_2d(submodel),
+                                              len(allowed_models),
+                                              axis=0)
                 submodel_added_with_allowed_models = reshaped_submodel + allowed_models
-                # after adding values can either be 2, -2 , -3 or -4 for the indexes that are active in both models
-                # for the other indices values are 0, -1, -2 or 1
-                # for the active indices map 2, -2, -3 and -4 to 1, -1, -2
 
-                # XXX Fixed this had - prior behavuir was simple div by 2
-
+                # normalize values for Pos, impl and expl values
                 submodel_added_with_allowed_models[submodel_added_with_allowed_models == POS_VAL + POS_VAL] = POS_VAL
                 submodel_added_with_allowed_models[submodel_added_with_allowed_models == IMPL_NEG + IMPL_NEG] = IMPL_NEG
                 submodel_added_with_allowed_models[submodel_added_with_allowed_models == EXPL_NEG + IMPL_NEG] = EXPL_NEG
@@ -717,7 +709,7 @@ def _merge_xor(*sub_models, atom_index_mapping, exp_atoms):
         i.e. Model1 & ~Model2
             ~Model1 &  Model2
     """
-    logging.debug(sub_models)
+    logging.debug(str(sub_models))
     negated_models = [
         _complement_array_model(model, atom_index_mapping, exp_atoms)
         for model in sub_models
@@ -771,11 +763,11 @@ def _merge_implication(*sub_models, atom_index_mapping, exp_atoms):
         antecedent, consequent = sub_models
         complement_antecedent = _complement_array_model(antecedent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms)
         logging.debug("complement_antecedent")
-        logging.debug(complement_antecedent)
+        logging.debug(str(complement_antecedent))
         complement_consequent = _complement_array_model(consequent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms)
 
         logging.debug("complement_consequent")
-        logging.debug(complement_consequent)
+        logging.debug(str(complement_consequent))
 
         list_of_combinations = []
 
@@ -786,7 +778,7 @@ def _merge_implication(*sub_models, atom_index_mapping, exp_atoms):
             list_of_combinations.append(antecedent_consequent)
 
         logging.debug("Combination 1 1")
-        logging.debug(antecedent_consequent)
+        logging.debug(str(antecedent_consequent))
 
         # complement of ante and consequent
         comp_antecedent_consequent = _merge_and(complement_antecedent, consequent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms)
@@ -795,7 +787,7 @@ def _merge_implication(*sub_models, atom_index_mapping, exp_atoms):
             list_of_combinations.append(comp_antecedent_consequent)
 
         logging.debug("Combination 0 1")
-        logging.debug(comp_antecedent_consequent)
+        logging.debug(str(comp_antecedent_consequent))
 
         # ante and complement of consequent
         comp_antecedent_comp_consequent = _merge_and(complement_antecedent, complement_consequent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms)
@@ -804,12 +796,12 @@ def _merge_implication(*sub_models, atom_index_mapping, exp_atoms):
             list_of_combinations.append(comp_antecedent_comp_consequent)
 
         logging.debug("Combination 0 0")
-        logging.debug(comp_antecedent_comp_consequent)
+        logging.debug(str(comp_antecedent_comp_consequent))
 
         # complement of ante and complement of consequent
         merged_models = np.vstack(list_of_combinations)
         logging.debug("Total merged `Implication` model: ")
-        logging.debug(merged_models)
+        logging.debug(str(merged_models))
         return merged_models
 
 
@@ -820,23 +812,23 @@ def _merge_equivalent(*sub_models, atom_index_mapping, exp_atoms):
         antecedent, consequent = sub_models
         complement_antecedent = _complement_array_model(antecedent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms)
         logging.debug("complement_antecedent")
-        logging.debug(complement_antecedent)
+        logging.debug(str(complement_antecedent))
         complement_consequent = _complement_array_model(consequent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms)
 
         logging.debug("complement_consequent")
-        logging.debug(complement_consequent)
+        logging.debug(str(complement_consequent))
 
         merged_models = _merge_and(antecedent, consequent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms)
         logging.debug("Combination 1 1")
-        logging.debug(merged_models)
+        logging.debug(str(merged_models))
 
         comp_antecedent_comp_consequent = _merge_and(complement_antecedent, complement_consequent, atom_index_mapping=atom_index_mapping, exp_atoms=exp_atoms)
         logging.debug("Combination 0 0")
-        logging.debug(comp_antecedent_comp_consequent)
+        logging.debug(str(comp_antecedent_comp_consequent))
 
         merged_models = np.vstack((merged_models, comp_antecedent_comp_consequent))
         logging.debug("Total merged `Implication` model: ")
-        logging.debug(merged_models)
+        logging.debug(str(merged_models))
         return merged_models
 
 
@@ -852,10 +844,10 @@ def _complement_array_model(model, atom_index_mapping, exp_atoms):
     model_copy[model_copy < 0] = 0
     set_model = {tuple(el) for el in model_copy}
     complement_as_set = set_all_possible_models.difference(set_model)
-    return np.array(sorted(complement_as_set, key=_increasing_ones_first_sort))
+    return np.array(sorted(complement_as_set, key=_sort_by_pos_vals))
 
 
-def _increasing_ones_first_sort(array_slice):
+def _sort_by_pos_vals(array_slice):
     """ Helper function to sort models by atom"""
     # this negates all the values as sorted will sort from smallest to biggest
     first_positive_then_neg = [-val for val in array_slice]
