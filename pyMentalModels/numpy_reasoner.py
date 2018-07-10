@@ -18,9 +18,6 @@ from pyMentalModels.constants import EXPL_NEG, POS_VAL, IMPL_NEG
 #######################################################################
 #
 # Also does not care how many arguments Xor takes (psychologically viable)
-<<<<<<< HEAD
-# XXX Recode everything without numpy
-=======
 #
 #
 # Proposed solution:
@@ -51,7 +48,6 @@ from pyMentalModels.constants import EXPL_NEG, POS_VAL, IMPL_NEG
 # --------------------------|-------------------------|--------------------------------
 # If and only if A then B   |       A   B             |              A   B
 #                           |        ...              |             ~A  ~B
->>>>>>> development
 
 """
 
@@ -209,7 +205,7 @@ def map_instance_to_operation(el, mode):
     inst_op_mapping_explicit = (
         (Or, build_or),
         (And, build_and),
-        (Xor, build_xor),
+        (Xor, build_xor), # XXX This is a non-dyadic implementation of the Xor for arbitrary many arguments
         (Implies, build_implication),
         (Equivalent, build_equals),
         (Not, build_not),
@@ -613,7 +609,7 @@ def build_necessary(exp, atom_index_mapping, exp_atoms, mode):
     # necessary
     # necessar -- AND
     # possible -- OR
-    return map_instance_to_operation(exp.args[0])(exp.args[0], atom_index_mapping, exp_atoms)
+    return map_instance_to_operation(exp.args[0])(exp.args[0], atom_index_mapping, exp_atoms, mode)
 
 
 def build_possibly(exp, atom_index_mapping, exp_atoms, mode):
