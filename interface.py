@@ -57,7 +57,7 @@ if __name__ == "__main__":
     parser.add_argument("expression", help="Expressions to be parsed, separated by comma. i.e. 'A, A -> B'")
     parser.add_argument("-m", "--mode", choices=["intuitive", "explicit"], default="intuitive", help="Can be either intuitive or explicit")
     parser.add_argument("-v", "--verbose", choices=["INFO", "DEBUG"], default="INFO", help="Level of verbosity to set for the program")
-    parser.add_argument("-i", "--infer", choices=["what_follows?", "necessary?", "possible?", "probability?", "verify?", "only_models"], help=textwrap.dedent("""\
+    parser.add_argument("-i", "--infer", choices=["what_follows", "necessary", "possible", "probability", "verify", "only_models"], help=textwrap.dedent("""\
             Choose what to check the mental models for.
             Choices are:
                 1. what_follows?:
