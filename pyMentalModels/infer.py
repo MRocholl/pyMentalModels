@@ -16,11 +16,11 @@ from enum import Enum
 
 
 class InferenceTask(Enum):
-    FOLLOWS = "what_follows?"
-    NECESSARY = "necessary?"
-    POSSIBLE = "possible?"
-    PROBABILITY = "probability?"
-    VERIFY = "verify?"
+    FOLLOWS = "what_follows"
+    NECESSARY = "necessary"
+    POSSIBLE = "possible"
+    PROBABILITY = "probability"
+    VERIFY = "verify"
     ONLY_MODELS = "only_models"
 
 
