@@ -7,8 +7,8 @@ LONG_DESCRIPTION = open("README.rst").read()
 MAINTAINER = "Moritz Rocholl"
 MAINTAINER_EMAIL = "moritz.rocholl@gmail.com"
 URL = "https://gkigit.informatik.uni-freiburg.de/coco/mentalmodels.git"
-# license = ??
-VERSION = "0.0.1"
+license = "MIT"
+VERSION = "0.0.9"
 
 PROJECT_ROOT = dirname(realpath(__file__))
 REQUIREMENTS_FILE = path_join(PROJECT_ROOT, "requirements.txt")
@@ -36,4 +36,4 @@ if __name__ == "__main__":
         install_requires=INSTALL_REQUIREMENTS,
         setup_requires=SETUP_REQUIREMENTS,
         tests_require=TEST_REQUIREMENTS,
-)
+    )
