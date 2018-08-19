@@ -37,6 +37,7 @@ def main(args):
     if len(models) <= 1:
         return "Nothing to infer"
     result = infer(models, args.infer)
+    print(result, flush=True)
     if args.infer == InferenceTask.FOLLOWS:
         if not result:
             print("The result is the empty model", result.model)

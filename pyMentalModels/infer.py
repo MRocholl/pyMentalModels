@@ -168,7 +168,7 @@ def infer(models: List, task: InferenceTask):
     print()
     print("Inference task is: {}".format(task))
     if task == InferenceTask.ONLY_MODELS or len(models) <= 1:
-        return models[0]
+        return models
     # first preprocess all mental models to share the same column space
     all_atoms_in_all_models = sorted(set().union(*(set(model.atoms_model) for model in models)), key=str)  # type: List
     atom_index_mapping_all = {atom: i for i, atom in enumerate(all_atoms_in_all_models)}
@@ -203,6 +203,8 @@ def infer(models: List, task: InferenceTask):
     *all_but_last_models, last_model = resized_mental_models
     all_but_last_str, last_str = ", ".join(str(model.expr) for model in models[:-1]), models[-1].expr
 
+    # All the following will return the Model for n-1, last_model and an inference_string
+
     # possible models given the first n-1 premises
     print()
     print("Combine all but last mental models...")
@@ -234,11 +236,14 @@ def infer(models: List, task: InferenceTask):
         }
 
         if necessary_atoms.issuperset(last_model_active_indices):
-            print("The last premise '{}' necessarily follows from the previous expressions '{}'".format(last_str, all_but_last_str))
+            infer_string = "The last premise '{}' necessarily follows from the previous expressions '{}'".format(last_str, all_but_last_str)
         else:
-            print("The last premise '{}' does not necessarily follow from the previous expressons '{}'".format(last_str, all_but_last_str))
+            infer_string = "The last premise '{}' does not necessarily follow from the previous expressons '{}'".format(last_str, all_but_last_str)
 
-        return mental_model(tuple(model.expr for model in models), possible_models, all_atoms_in_all_models, atom_index_mapping_all)
+        return (
+            mental_model(tuple(model.expr for model in models[:-1]), possible_models, all_atoms_in_all_models, atom_index_mapping_all),
+            mental_model(tuple(model.expr for model in models[-1:]), last_model, all_atoms_in_all_models, atom_index_mapping_all),
+            infer_string)
 
     if task == InferenceTask.POSSIBLE:
         if not last_model.shape[0] == 1:
@@ -253,10 +258,15 @@ def infer(models: List, task: InferenceTask):
                 values_at_active_indices,
                 possible_model[last_model_active_indices]
             ).all():  # And return if all the values where the same
-                print("The last premise '{}' possibly follows from the previous expressions '{}'".format(last_str, all_but_last_str))
-        print("The last premise '{}' does not possibly follow from the previous expressons '{}'".format(last_str, all_but_last_str))
-
-        return mental_model(tuple(model.expr for model in models), possible_models, all_atoms_in_all_models, atom_index_mapping_all)
+                infer_string = "The last premise '{}' possibly follows from the previous expressions '{}'".format(last_str, all_but_last_str)
+                return (
+                    mental_model(tuple(model.expr for model in models[:-1]), possible_models, all_atoms_in_all_models, atom_index_mapping_all),
+                    mental_model(tuple(model.expr for model in models[-1:]), last_model, all_atoms_in_all_models, atom_index_mapping_all),
+                    infer_string)
+        return (
+            mental_model(tuple(model.expr for model in models[:-1]), possible_models, all_atoms_in_all_models, atom_index_mapping_all),
+            mental_model(tuple(models[-1].expr), last_model, all_atoms_in_all_models, atom_index_mapping_all),
+            "The last premise '{}' does not possibly follow from the previous expressons '{}'".format(last_str, all_but_last_str))
 
     if task == InferenceTask.PROBABILITY:
         raise NotImplementedError("Future work...")  # XXX Requires probabilities based on facts I do not have implemented
